@@ -1,2 +1,6 @@
 
 hw1/dataset/
+
+hw1/__pycache__/
+
+hw1/mfcc/
