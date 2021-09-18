@@ -9,9 +9,11 @@ import sys
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from numpy.core.fromnumeric import shape
 
 data_path = './dataset/'
 mfcc_path = './mfcc/'
+rms_path = './rms/'
 
 MFCC_DIM = 20
 
@@ -41,8 +43,45 @@ def mean_mfcc(dataset='train'):
     f.close()
 
     return mfcc_mat
-        
+
+
+
+def load_rms(dataset='train'):
+    f = open(data_path + dataset + '_list.txt','r')
+    rms_mat = []
+
+    i = 0
+    for file_name in f:
+        # load rms file
+        file_name = file_name.rstrip('\n')
+        file_name = file_name.replace('.wav','.npy')
+        rms_file = rms_path + file_name
+        rms = np.load(rms_file)
+
+        # rms_mat.append()
+        rms_mat.append(rms)
+        i = i + 1
+
+    f.close()
+
+    rms_mat = np.array(rms_mat).transpose()
+    print(rms_mat.shape)
+    return rms_mat
+
+# def delta_feature(dataset='train', feature='rms'):
+#     f = open(data_path + dataset + '_list.txt', 'r')
+    
+#     if(feature == 'rms'):
+#         feature_dim = 
+
+#     if(dataset == 'train'):
+#         feature_mat = np.zeros(shape=())
+
+
+
 if __name__ == '__main__':
+    load_rms()
+    quit()
     train_data = mean_mfcc('train')
     valid_data = mean_mfcc('valid')
 
