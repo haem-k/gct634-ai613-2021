@@ -12,6 +12,7 @@ import librosa
 
 data_path = './dataset/'
 mfcc_path = './mfcc/'
+rms_path = './rms/'
 
 MFCC_DIM = 20
 
@@ -33,7 +34,7 @@ def extract_mfcc(dataset='train'):
 
         ##### Method 1
         mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=MFCC_DIM)
-        
+
         ##### Method 2 
         """
         # STFT
@@ -62,9 +63,42 @@ def extract_mfcc(dataset='train'):
             os.makedirs(os.path.dirname(save_file))
         np.save(save_file, mfcc)
 
-    f.close();
+    f.close()
+
+
+
+def extract_rms(dataset='train'):
+    f = open(data_path + dataset + '_list.txt','r')
+
+    i = 0
+    for file_name in f:
+        # progress check
+        i = i + 1
+        if not (i % 10):
+            print(i)
+
+        # load audio file
+        file_name = file_name.rstrip('\n')
+        file_path = data_path + file_name
+        y, sr = librosa.load(file_path, sr=22050)
+
+        # get RMS
+        rms = librosa.feature.rms(y=y)  # (1, 173)
+
+        # save mfcc as a file
+        file_name = file_name.replace('.wav','.npy')
+        save_file = rms_path + file_name
+
+        if not os.path.exists(os.path.dirname(save_file)):
+            os.makedirs(os.path.dirname(save_file))
+        np.save(save_file, rms)
+
+    f.close()
+
+
 
 if __name__ == '__main__':
-    extract_mfcc(dataset='train')                 
-    extract_mfcc(dataset='valid')                                  
+    extract_rms(dataset='train')
+    # extract_mfcc(dataset='train')                 
+    # extract_mfcc(dataset='valid')                                  
 
