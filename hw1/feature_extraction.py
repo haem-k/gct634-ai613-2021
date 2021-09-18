@@ -84,6 +84,7 @@ def extract_rms(dataset='train'):
 
         # get RMS
         rms = librosa.feature.rms(y=y)  # (1, 173)
+        rms = rms.squeeze()
 
         # save mfcc as a file
         file_name = file_name.replace('.wav','.npy')
@@ -99,6 +100,7 @@ def extract_rms(dataset='train'):
 
 if __name__ == '__main__':
     extract_rms(dataset='train')
+    extract_rms(dataset='valid')
     # extract_mfcc(dataset='train')                 
     # extract_mfcc(dataset='valid')                                  
 
