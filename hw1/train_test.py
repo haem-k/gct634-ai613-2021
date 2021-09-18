@@ -35,6 +35,14 @@ if __name__ == '__main__':
     train_X = mean_mfcc('train')
     valid_X = mean_mfcc('valid')
 
+    # load rms
+    train_rms = load_rms('train')
+    valid_rms = load_rms('valid')
+
+    # concat two features
+    train_X = np.concatenate((train_X, train_rms), axis=0)
+    valid_X = np.concatenate((valid_X, valid_rms), axis=0)
+
     # label generation
     cls = np.array([1,2,3,4,5,6,7,8,9,10])
     train_Y = np.repeat(cls, 110)
