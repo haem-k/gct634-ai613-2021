@@ -14,6 +14,7 @@ from feature_summary import *
 from sklearn.linear_model import SGDClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
+from sklearn.mixture import GaussianMixture
 
 def train_model(train_X, train_Y, valid_X, valid_Y, hyper_param1, classifier='sgd'):
 
@@ -24,6 +25,8 @@ def train_model(train_X, train_Y, valid_X, valid_Y, hyper_param1, classifier='sg
         clf = KNeighborsClassifier(n_neighbors=5)
     elif classifier == 'svc':
         clf = SVC()
+    # elif classifier == 'gmm':
+    #     clf = GaussianMixture(n_components=10)
 
     # train
     clf.fit(train_X, train_Y)
@@ -43,8 +46,8 @@ if __name__ == '__main__':
     # valid_X = mean_mfcc('valid')
 
     # load mfcc delta
-    train_X = delta_mfcc(dataset='train')
-    valid_X = delta_mfcc(dataset='valid')
+    train_dmfcc = delta_mfcc(dataset='train')
+    valid_dmfcc = delta_mfcc(dataset='valid')
 
     # # load mfcc double delta
     # train_dd = double_delta_mfcc(dataset='train')
@@ -54,9 +57,13 @@ if __name__ == '__main__':
     train_rms = load_rms('train')
     valid_rms = load_rms('valid')
 
-    # concat two features
-    train_X = np.concatenate((train_X, train_rms), axis=0)
-    valid_X = np.concatenate((valid_X, valid_rms), axis=0)
+    # # load rms delta
+    # train_rms_delta = delta_rms('train')
+    # valid_rms_delta = delta_rms('valid')
+
+    # concat features
+    train_X = np.concatenate((train_dmfcc, train_rms), axis=0)
+    valid_X = np.concatenate((valid_dmfcc, valid_rms), axis=0)
 
 
     print(f"Input feature dimension: {train_X.shape}")

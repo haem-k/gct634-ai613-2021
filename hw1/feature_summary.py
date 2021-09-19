@@ -10,12 +10,13 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.core.fromnumeric import shape
+from sklearn.decomposition import PCA
 
 data_path = './dataset/'
 mfcc_path = './mfcc/'
 rms_path = './rms/'
 
-MFCC_DIM = 20
+MFCC_DIM = 13
 
 def mean_mfcc(dataset='train'):
     
@@ -43,29 +44,6 @@ def mean_mfcc(dataset='train'):
     f.close()
 
     return mfcc_mat
-
-
-
-def load_rms(dataset='train'):
-    f = open(data_path + dataset + '_list.txt','r')
-    rms_mat = []
-
-    i = 0
-    for file_name in f:
-        # load rms file
-        file_name = file_name.rstrip('\n')
-        file_name = file_name.replace('.wav','.npy')
-        rms_file = rms_path + file_name
-        rms = np.load(rms_file)
-
-        # rms_mat.append()
-        rms_mat.append(rms)
-        i = i + 1
-
-    f.close()
-
-    rms_mat = np.array(rms_mat).transpose()
-    return rms_mat
 
 
 
@@ -99,6 +77,8 @@ def delta_mfcc(dataset='train'):
 
     delta_mean_mat = np.array(delta_mean_mat).transpose()
     return delta_mean_mat
+
+
 
 
 def double_delta_mfcc(dataset='train'):
@@ -144,6 +124,29 @@ def double_delta_mfcc(dataset='train'):
 
 
 
+def load_rms(dataset='train'):
+    f = open(data_path + dataset + '_list.txt','r')
+    rms_mat = []
+
+    i = 0
+    for file_name in f:
+        # load rms file
+        file_name = file_name.rstrip('\n')
+        file_name = file_name.replace('.wav','.npy')
+        rms_file = rms_path + file_name
+        rms = np.load(rms_file)
+
+        # rms_mat.append()
+        rms_mat.append(rms)
+        i = i + 1
+
+    f.close()
+
+    rms_mat = np.array(rms_mat).transpose()
+    return rms_mat
+
+
+
 def delta_rms(dataset='train'):
     f = open(data_path + dataset + '_list.txt', 'r')
     rms_mat = []
@@ -173,6 +176,7 @@ def delta_rms(dataset='train'):
     rms_delta_mat = np.array(rms_delta_mat).transpose()
     print(rms_delta_mat.shape)
     return rms_delta_mat
+
 
 
 
