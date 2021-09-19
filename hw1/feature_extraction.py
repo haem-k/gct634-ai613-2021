@@ -14,7 +14,7 @@ data_path = './dataset/'
 mfcc_path = './mfcc/'
 rms_path = './rms/'
 
-MFCC_DIM = 20
+MFCC_DIM = 13
 
 def extract_mfcc(dataset='train'):
     f = open(data_path + dataset + '_list.txt','r')
@@ -101,6 +101,7 @@ def extract_rms(dataset='train'):
 if __name__ == '__main__':
     extract_rms(dataset='train')
     extract_rms(dataset='valid')
-    # extract_mfcc(dataset='train')                 
-    # extract_mfcc(dataset='valid')                                  
+    
+    extract_mfcc(dataset='train')                 
+    extract_mfcc(dataset='valid')                                  
 
