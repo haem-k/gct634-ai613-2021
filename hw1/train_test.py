@@ -12,14 +12,18 @@ import librosa
 from feature_summary import *
 
 from sklearn.linear_model import SGDClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
 
 def train_model(train_X, train_Y, valid_X, valid_Y, hyper_param1, classifier='sgd'):
 
     # Choose a classifier (here, linear SVM)
     if classifier == 'sgd':
         clf = SGDClassifier(verbose=0, loss="hinge", alpha=hyper_param1, max_iter=1000, penalty="l2", random_state=0)
-    # elif classifier == 'kmeans':
-    #     clf = KMeans
+    elif classifier == 'knn':
+        clf = KNeighborsClassifier(n_neighbors=5)
+    elif classifier == 'svc':
+        clf = SVC()
 
     # train
     clf.fit(train_X, train_Y)
@@ -42,6 +46,10 @@ if __name__ == '__main__':
     train_X = delta_mfcc(dataset='train')
     valid_X = delta_mfcc(dataset='valid')
 
+    # # load mfcc double delta
+    # train_dd = double_delta_mfcc(dataset='train')
+    # valid_dd = double_delta_mfcc(dataset='valid')
+
     # load rms
     train_rms = load_rms('train')
     valid_rms = load_rms('valid')
@@ -50,7 +58,8 @@ if __name__ == '__main__':
     train_X = np.concatenate((train_X, train_rms), axis=0)
     valid_X = np.concatenate((valid_X, valid_rms), axis=0)
 
-    print(f"Input feature dimension: {train_X.shape[0]}")
+
+    print(f"Input feature dimension: {train_X.shape}")
 
     # label generation
     cls = np.array([1,2,3,4,5,6,7,8,9,10])
@@ -69,12 +78,12 @@ if __name__ == '__main__':
     valid_X = valid_X/(train_X_std + 1e-5)
 
     # training model
-    alphas = [0.00001, 0.00005, 0.0001, 0.0005, 0.001]
+    alphas = [1e-5, 5e-5, 0.0001, 0.0005, 0.001]
 
     model = []
     valid_acc = []
     for a in alphas:
-        clf, acc = train_model(train_X, train_Y, valid_X, valid_Y, a)
+        clf, acc = train_model(train_X, train_Y, valid_X, valid_Y, a, classifier='svc')
         model.append(clf)
         valid_acc.append(acc)
         
