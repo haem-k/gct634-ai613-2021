@@ -71,7 +71,6 @@ def load_rms(dataset='train'):
 
 def delta_mfcc(dataset='train'):
     f = open(data_path + dataset + '_list.txt', 'r')
-    mfcc_mat = []
     delta_mean_mat = []
     
     i = 0
@@ -102,7 +101,45 @@ def delta_mfcc(dataset='train'):
     return delta_mean_mat
 
 
+def double_delta_mfcc(dataset='train'):
+    f = open(data_path + dataset + '_list.txt', 'r')
+    double_delta_mean_mat = []
+    
+    i = 0
+    for file_name in f:
+        # load mfcc file
+        file_name = file_name.rstrip('\n')
+        file_name = file_name.replace('.wav','.npy')
+        mfcc_file = mfcc_path + file_name
+        mfcc = np.load(mfcc_file)
+        mfcc = mfcc.transpose()
 
+        # compute delta
+        frames = mfcc.shape[0]
+        delta_mat = []
+        for j in range(1, frames):
+            delta = mfcc[j] - mfcc[j-1]
+            delta_mat.append(delta)
+        delta_mat = np.array(delta_mat)
+
+        # compute double delta
+        num_delta = delta_mat.shape[0]
+        double_delta_mat = []
+        for j in range(1, num_delta):
+            double_delta = delta_mat[j] - delta_mat[j-1]
+            double_delta_mat.append(double_delta)
+        double_delta_mat = np.array(double_delta_mat)
+
+        # mean pooling double delta
+        double_delta_mean = np.mean(double_delta_mat, axis=0)
+        double_delta_mean_mat.append(double_delta_mean)
+
+        i = i + 1
+
+    f.close()
+    
+    double_delta_mean_mat = np.array(double_delta_mean_mat).transpose()
+    return double_delta_mean_mat
 
 
 
