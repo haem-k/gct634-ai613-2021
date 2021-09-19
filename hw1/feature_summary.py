@@ -65,49 +65,83 @@ def load_rms(dataset='train'):
     f.close()
 
     rms_mat = np.array(rms_mat).transpose()
-    print(rms_mat.shape)
     return rms_mat
 
 
-def delta_feature(dataset='train', feature='rms'):
-    f = open(data_path + dataset + '_list.txt', 'r')
-    feature_mat = []
-    feature_delta_mat = []
 
-    if feature == 'rms':
-        feature_path = rms_path
-    elif feature == 'mfcc':
-        feature_path = mfcc_path
+def delta_mfcc(dataset='train'):
+    f = open(data_path + dataset + '_list.txt', 'r')
+    mfcc_mat = []
+    delta_mean_mat = []
+    
+    i = 0
+    for file_name in f:
+        # load mfcc file
+        file_name = file_name.rstrip('\n')
+        file_name = file_name.replace('.wav','.npy')
+        mfcc_file = mfcc_path + file_name
+        mfcc = np.load(mfcc_file)
+        mfcc = mfcc.transpose()
+
+        # compute delta
+        frames = mfcc.shape[0]
+        delta_mat = []
+        for j in range(1, frames):
+            delta = mfcc[j] - mfcc[j-1]
+            delta_mat.append(delta)
+        delta_mat = np.array(delta_mat)
+
+        # mean pooling mfcc_delta
+        delta_mean = np.mean(delta_mat, axis=0)
+        delta_mean_mat.append(delta_mean)
+        i = i + 1
+
+    f.close()
+
+    delta_mean_mat = np.array(delta_mean_mat).transpose()
+    return delta_mean_mat
+
+
+
+
+
+
+
+def delta_rms(dataset='train'):
+    f = open(data_path + dataset + '_list.txt', 'r')
+    rms_mat = []
+    rms_delta_mat = []
 
     i = 0
     for file_name in f:
-        # load feature file
+        # load rms file
         file_name = file_name.rstrip('\n')
         file_name = file_name.replace('.wav','.npy')
-        feature_file = feature_path + file_name
-        feature = np.load(feature_file)
-        feature_mat.append(feature)
+        rms_file = rms_path + file_name
+        rms = np.load(rms_file)
+        rms_mat.append(rms)
         
         # compute delta
-        feature_dim = feature.shape[0]
+        rms_dim = rms.shape[0]
         delta = []
-        for j in range(1, feature_dim):
-            delta.append(feature[j] - feature[j-1])
+        for j in range(1, rms_dim):
+            delta.append(rms[j] - rms[j-1])
         delta = np.array(delta)
-        feature_delta_mat.append(delta)
+        rms_delta_mat.append(delta)
 
         i = i + 1
 
     f.close()
 
-    feature_delta_mat = np.array(feature_delta_mat).transpose()
-    return feature_delta_mat
+    rms_delta_mat = np.array(rms_delta_mat).transpose()
+    print(rms_delta_mat.shape)
+    return rms_delta_mat
 
 
 
 
 if __name__ == '__main__':
-    delta_feature()
+    double_delta_mfcc()
     quit()
     train_data = mean_mfcc('train')
     valid_data = mean_mfcc('valid')
