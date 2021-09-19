@@ -13,10 +13,13 @@ from feature_summary import *
 
 from sklearn.linear_model import SGDClassifier
 
-def train_model(train_X, train_Y, valid_X, valid_Y, hyper_param1):
+def train_model(train_X, train_Y, valid_X, valid_Y, hyper_param1, classifier='sgd'):
 
     # Choose a classifier (here, linear SVM)
-    clf = SGDClassifier(verbose=0, loss="hinge", alpha=hyper_param1, max_iter=1000, penalty="l2", random_state=0)
+    if classifier == 'sgd':
+        clf = SGDClassifier(verbose=0, loss="hinge", alpha=hyper_param1, max_iter=1000, penalty="l2", random_state=0)
+    # elif classifier == 'kmeans':
+    #     clf = KMeans
 
     # train
     clf.fit(train_X, train_Y)
@@ -25,27 +28,29 @@ def train_model(train_X, train_Y, valid_X, valid_Y, hyper_param1):
     valid_Y_hat = clf.predict(valid_X)
 
     accuracy = np.sum((valid_Y_hat == valid_Y))/300.0*100.0
-    print('validation accuracy = ' + str(accuracy) + ' %')
+    print(f'alpha = {hyper_param1}, validation accuracy = {accuracy}%')
     
     return clf, accuracy
 
 if __name__ == '__main__':
 
-    # load data 
-    train_X = mean_mfcc('train')
-    valid_X = mean_mfcc('valid')
+    # # load data 
+    # train_X = mean_mfcc('train')
+    # valid_X = mean_mfcc('valid')
 
-    # # load rms
-    # train_rms = load_rms('train')
-    # valid_rms = load_rms('valid')
+    # load mfcc delta
+    train_X = delta_mfcc(dataset='train')
+    valid_X = delta_mfcc(dataset='valid')
 
-    # load rms delta
-    train_rms_delta = delta_feature('train')
-    valid_rms_delta = delta_feature('valid')
+    # load rms
+    train_rms = load_rms('train')
+    valid_rms = load_rms('valid')
 
     # concat two features
-    train_X = np.concatenate((train_X, train_rms_delta), axis=0)
-    valid_X = np.concatenate((valid_X, valid_rms_delta), axis=0)
+    train_X = np.concatenate((train_X, train_rms), axis=0)
+    valid_X = np.concatenate((valid_X, valid_rms), axis=0)
+
+    print(f"Input feature dimension: {train_X.shape[0]}")
 
     # label generation
     cls = np.array([1,2,3,4,5,6,7,8,9,10])
@@ -64,7 +69,7 @@ if __name__ == '__main__':
     valid_X = valid_X/(train_X_std + 1e-5)
 
     # training model
-    alphas = [0.0001, 0.001, 0.01, 0.1, 1, 10]
+    alphas = [0.00001, 0.00005, 0.0001, 0.0005, 0.001]
 
     model = []
     valid_acc = []
