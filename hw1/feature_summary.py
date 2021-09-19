@@ -68,19 +68,46 @@ def load_rms(dataset='train'):
     print(rms_mat.shape)
     return rms_mat
 
-# def delta_feature(dataset='train', feature='rms'):
-#     f = open(data_path + dataset + '_list.txt', 'r')
-    
-#     if(feature == 'rms'):
-#         feature_dim = 
 
-#     if(dataset == 'train'):
-#         feature_mat = np.zeros(shape=())
+def delta_feature(dataset='train', feature='rms'):
+    f = open(data_path + dataset + '_list.txt', 'r')
+    feature_mat = []
+    feature_delta_mat = []
+
+    if feature == 'rms':
+        feature_path = rms_path
+    elif feature == 'mfcc':
+        feature_path = mfcc_path
+
+    i = 0
+    for file_name in f:
+        # load feature file
+        file_name = file_name.rstrip('\n')
+        file_name = file_name.replace('.wav','.npy')
+        feature_file = feature_path + file_name
+        feature = np.load(feature_file)
+        feature_mat.append(feature)
+        
+        # compute delta
+        feature_dim = feature.shape[0]
+        delta = []
+        for j in range(1, feature_dim):
+            delta.append(feature[j] - feature[j-1])
+        delta = np.array(delta)
+        feature_delta_mat.append(delta)
+
+        i = i + 1
+
+    f.close()
+
+    feature_delta_mat = np.array(feature_delta_mat).transpose()
+    return feature_delta_mat
+
 
 
 
 if __name__ == '__main__':
-    load_rms()
+    delta_feature()
     quit()
     train_data = mean_mfcc('train')
     valid_data = mean_mfcc('valid')
