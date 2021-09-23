@@ -11,10 +11,15 @@ import numpy as np
 import librosa
 from feature_summary import *
 
+from sklearn.decomposition import PCA
 from sklearn.linear_model import SGDClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.mixture import GaussianMixture
+from scipy.fftpack import dct
+
+
+
 
 def train_model(train_X, train_Y, valid_X, valid_Y, hyper_param1, classifier='sgd'):
 
@@ -49,6 +54,28 @@ if __name__ == '__main__':
     train_dmfcc = delta_mfcc(dataset='train')
     valid_dmfcc = delta_mfcc(dataset='valid')
 
+    train_data_num = train_dmfcc.shape[0]
+    valid_data_num = valid_dmfcc.shape[0]
+    
+    train_dmfcc = np.reshape(train_dmfcc, (train_data_num, -1))
+    valid_dmfcc = np.reshape(valid_dmfcc, (valid_data_num, -1))
+    print(f"train_dmfcc shape before: {train_dmfcc.shape}")
+
+    # PCA to mfcc delta
+    # pca = PCA(n_components=0.90, svd_solver='full')
+    pca = PCA(n_components=70)
+    train_pca_dmfcc = pca.fit_transform(train_dmfcc)
+    valid_pca_dmfcc = pca.transform(valid_dmfcc)
+    print(f"train_dmfcc shape after pca: {train_pca_dmfcc.shape}")
+
+    # # DCT to mfcc delta
+    # dct_train_dmfcc = dct(train_dmfcc, n=50)
+    # dct_valid_dmfcc = dct(valid_dmfcc, n=50)
+    # print(f"train_rms shape after DCT: {dct_train_dmfcc.shape}")
+
+
+
+
     # # load mfcc double delta
     # train_dd = double_delta_mfcc(dataset='train')
     # valid_dd = double_delta_mfcc(dataset='valid')
@@ -56,31 +83,67 @@ if __name__ == '__main__':
     # load rms
     train_rms = load_rms('train')
     valid_rms = load_rms('valid')
+    print(f"train_rms shape before : {train_rms.shape}")
+
+
+    # # DCT to compress rms
+    # dct_train_rms = dct(train_rms, n=20)
+    # dct_valid_rms = dct(valid_rms, n=20)
+    # print(f"train_rms shape after DCT: {dct_train_rms.shape}")
+
+
+    # # PCA to compress rms
+    # rms_pca = PCA(n_components=0.99, svd_solver='full')
+    # pca_train_rms = rms_pca.fit_transform(train_rms)
+    # pca_valid_rms = rms_pca.transform(valid_rms)
+    # print(f"train_rms shape after PCA : {pca_train_rms.shape}")
+
 
     # # load rms delta
     # train_rms_delta = delta_rms('train')
     # valid_rms_delta = delta_rms('valid')
 
     # concat features
-    train_X = np.concatenate((train_dmfcc, train_rms), axis=0)
-    valid_X = np.concatenate((valid_dmfcc, valid_rms), axis=0)
+    train_X = np.concatenate((train_pca_dmfcc, train_rms), axis=1)
+    valid_X = np.concatenate((valid_pca_dmfcc, valid_rms), axis=1)
 
+    # train_X = np.concatenate((dct_train_dmfcc, dct_train_rms), axis=1)
+    # valid_X = np.concatenate((dct_valid_dmfcc, dct_valid_rms), axis=1)
 
-    print(f"Input feature dimension: {train_X.shape}")
+    # train_X = np.concatenate((train_pca_dmfcc, train_rms_delta), axis=1)
+    # valid_X = np.concatenate((valid_pca_dmfcc, valid_rms_delta), axis=1)
+    
+    # train_X = np.concatenate((train_pca_dmfcc, pca_train_rms), axis=1)
+    # valid_X = np.concatenate((valid_pca_dmfcc, pca_valid_rms), axis=1)
+    
+    # train_X = train_pca_dmfcc
+    # valid_X = valid_pca_dmfcc
+
+    print(f"-->  Input feature dimension: {train_X.shape}\n")
 
     # label generation
+    # 1: bass_electronic
+    # 2: brass_acoustic
+    # 3: flute_acoustic
+    # 4: guitar_acoustic
+    # 5: keyboard_acoustic
+    # 6: mallet_acoustic
+    # 7: organ_electronic
+    # 8: reed_acoustic
+    # 9: string_acoustic
+    # 10: vocal_acoustic
     cls = np.array([1,2,3,4,5,6,7,8,9,10])
     train_Y = np.repeat(cls, 110)
     valid_Y = np.repeat(cls, 30)
 
     # feature normalizaiton
-    train_X = train_X.T
+    # train_X = train_X.T
     train_X_mean = np.mean(train_X, axis=0)
     train_X = train_X - train_X_mean
     train_X_std = np.std(train_X, axis=0)
     train_X = train_X / (train_X_std + 1e-5)
     
-    valid_X = valid_X.T
+    # valid_X = valid_X.T
     valid_X = valid_X - train_X_mean
     valid_X = valid_X/(train_X_std + 1e-5)
 
@@ -101,5 +164,13 @@ if __name__ == '__main__':
     valid_Y_hat = final_model.predict(valid_X)
 
     accuracy = np.sum((valid_Y_hat == valid_Y))/300.0*100.0
+    wrong = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    
+    for i in range(0, 300):
+        if valid_Y_hat[i] != valid_Y[i]:
+            print(f'Answer: {valid_Y[i]}, Wrong guess: {valid_Y_hat[i]}')
+            wrong[valid_Y[i]-1] += 1
+        
+    print(f'wrong answers: {wrong}')
     print('final validation accuracy = ' + str(accuracy) + ' %')
 

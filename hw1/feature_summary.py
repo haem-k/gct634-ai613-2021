@@ -10,7 +10,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.core.fromnumeric import shape
-from sklearn.decomposition import PCA
+
 
 data_path = './dataset/'
 mfcc_path = './mfcc/'
@@ -49,7 +49,7 @@ def mean_mfcc(dataset='train'):
 
 def delta_mfcc(dataset='train'):
     f = open(data_path + dataset + '_list.txt', 'r')
-    delta_mean_mat = []
+    total_delta = []
     
     i = 0
     for file_name in f:
@@ -67,16 +67,14 @@ def delta_mfcc(dataset='train'):
             delta = mfcc[j] - mfcc[j-1]
             delta_mat.append(delta)
         delta_mat = np.array(delta_mat)
-
-        # mean pooling mfcc_delta
-        delta_mean = np.mean(delta_mat, axis=0)
-        delta_mean_mat.append(delta_mean)
+        total_delta.append(delta_mat)
         i = i + 1
 
     f.close()
 
-    delta_mean_mat = np.array(delta_mean_mat).transpose()
-    return delta_mean_mat
+    total_delta = np.array(total_delta)
+    print(total_delta.shape)
+    return total_delta
 
 
 
@@ -122,8 +120,6 @@ def double_delta_mfcc(dataset='train'):
     return double_delta_mean_mat
 
 
-
-
 def load_rms(dataset='train'):
     f = open(data_path + dataset + '_list.txt','r')
     rms_mat = []
@@ -142,7 +138,7 @@ def load_rms(dataset='train'):
 
     f.close()
 
-    rms_mat = np.array(rms_mat).transpose()
+    rms_mat = np.array(rms_mat)
     return rms_mat
 
 
@@ -173,7 +169,7 @@ def delta_rms(dataset='train'):
 
     f.close()
 
-    rms_delta_mat = np.array(rms_delta_mat).transpose()
+    rms_delta_mat = np.array(rms_delta_mat)
     print(rms_delta_mat.shape)
     return rms_delta_mat
 
@@ -182,7 +178,7 @@ def delta_rms(dataset='train'):
 
 
 if __name__ == '__main__':
-    double_delta_mfcc()
+    delta_mfcc()
     quit()
     train_data = mean_mfcc('train')
     valid_data = mean_mfcc('valid')
