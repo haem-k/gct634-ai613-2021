@@ -19,17 +19,14 @@ rms_path = './rms/'
 MFCC_DIM = 13
 
 
+
 '''
 MFCC related functions
 '''
 def load_mfcc(dataset='train'):
     
     f = open(data_path + dataset + '_list.txt','r')
-
-    if dataset == 'train':
-        mfcc_mat = np.zeros(shape=(MFCC_DIM, 1100))
-    else:
-        mfcc_mat = np.zeros(shape=(MFCC_DIM, 300))
+    mfcc_mat = []
 
     i = 0
     for file_name in f:
@@ -39,42 +36,15 @@ def load_mfcc(dataset='train'):
         file_name = file_name.replace('.wav','.npy')
         mfcc_file = mfcc_path + file_name
         mfcc = np.load(mfcc_file)
-
-        mfcc_mat[:,i]= mfcc
+        mfcc = mfcc.transpose()
+        mfcc_mat.append(mfcc)
         i = i + 1
 
     f.close()
 
+    mfcc_mat = np.array(mfcc_mat)
+    print(f'{dataset} MFCC shape: {mfcc_mat.shape}')
     return mfcc_mat
-
-
-def mean_mfcc(dataset='train'):
-    
-    f = open(data_path + dataset + '_list.txt','r')
-
-    if dataset == 'train':
-        mfcc_mat = np.zeros(shape=(MFCC_DIM, 1100))
-    else:
-        mfcc_mat = np.zeros(shape=(MFCC_DIM, 300))
-
-    i = 0
-    for file_name in f:
-
-        # load mfcc file
-        file_name = file_name.rstrip('\n')
-        file_name = file_name.replace('.wav','.npy')
-        mfcc_file = mfcc_path + file_name
-        mfcc = np.load(mfcc_file)
-
-        # mean pooling
-        temp = np.mean(mfcc, axis=1)
-        mfcc_mat[:,i]= np.mean(mfcc, axis=1)
-        i = i + 1
-
-    f.close()
-
-    return mfcc_mat
-
 
 def delta_mfcc(dataset='train'):
     f = open(data_path + dataset + '_list.txt', 'r')
@@ -102,9 +72,8 @@ def delta_mfcc(dataset='train'):
     f.close()
 
     total_delta = np.array(total_delta)
-    print(total_delta.shape)
+    print(f'{dataset} MFCC delta shape: {total_delta.shape}')
     return total_delta
-
 
 def double_delta_mfcc(dataset='train'):
     f = open(data_path + dataset + '_list.txt', 'r')
@@ -141,9 +110,35 @@ def double_delta_mfcc(dataset='train'):
     f.close()
     
     total_double_delta = np.array(total_double_delta)
-    print(total_double_delta.shape)
+    print(f'{dataset} MFCC double delta shape: {total_double_delta.shape}')
     return total_double_delta
 
+def mean_mfcc(dataset='train'):
+    
+    f = open(data_path + dataset + '_list.txt','r')
+
+    if dataset == 'train':
+        mfcc_mat = np.zeros(shape=(MFCC_DIM, 1100))
+    else:
+        mfcc_mat = np.zeros(shape=(MFCC_DIM, 300))
+
+    i = 0
+    for file_name in f:
+
+        # load mfcc file
+        file_name = file_name.rstrip('\n')
+        file_name = file_name.replace('.wav','.npy')
+        mfcc_file = mfcc_path + file_name
+        mfcc = np.load(mfcc_file)
+
+        # mean pooling
+        temp = np.mean(mfcc, axis=1)
+        mfcc_mat[:,i]= np.mean(mfcc, axis=1)
+        i = i + 1
+
+    f.close()
+
+    return mfcc_mat
 
 
 
@@ -169,6 +164,7 @@ def load_rms(dataset='train'):
     f.close()
 
     rms_mat = np.array(rms_mat)
+    print(f'{dataset} RMS shape: {rms_mat.shape}')
     return rms_mat
 
 
@@ -200,14 +196,14 @@ def delta_rms(dataset='train'):
     f.close()
 
     rms_delta_mat = np.array(rms_delta_mat)
-    # print(rms_delta_mat.shape)
+    print(f'{dataset} RMS delta shape: {rms_delta_mat.shape}')
     return rms_delta_mat
+
 
 
 def double_delta_rms(dataset='train'):
     f = open(data_path + dataset + '_list.txt', 'r')
-    rms_mat = []
-    rms_delta_mat = []
+    total_double_delta = []
 
     i = 0
     for file_name in f:
@@ -216,7 +212,6 @@ def double_delta_rms(dataset='train'):
         file_name = file_name.replace('.wav','.npy')
         rms_file = rms_path + file_name
         rms = np.load(rms_file)     # (173,)
-        rms_mat.append(rms)
         
         # compute delta
         rms_dim = rms.shape[0]
@@ -224,15 +219,24 @@ def double_delta_rms(dataset='train'):
         for j in range(1, rms_dim):
             delta.append(rms[j] - rms[j-1])
         delta = np.array(delta)
-        rms_delta_mat.append(delta)
+
+        # compute double delta
+        num_delta = delta.shape[0]
+        double_delta_mat = []
+        for j in range(1, num_delta):
+            double_delta = delta[j] - delta[j-1]
+            double_delta_mat.append(double_delta)
+
+        double_delta_mat = np.array(double_delta_mat)
+        total_double_delta.append(double_delta_mat)
 
         i = i + 1
 
     f.close()
 
-    rms_delta_mat = np.array(rms_delta_mat)
-    # print(rms_delta_mat.shape)
-    return rms_delta_mat
+    total_double_delta = np.array(total_double_delta)
+    print(f'{dataset} RMS double delta shape: {total_double_delta.shape}')
+    return total_double_delta
 
 
 
@@ -240,8 +244,19 @@ def double_delta_rms(dataset='train'):
 
 
 if __name__ == '__main__':
+    load_mfcc()
+    delta_mfcc()
+    double_delta_mfcc()
+
+    print()
+
+    load_rms()
     delta_rms()
+    double_delta_rms()
+
     quit()
+
+
     train_data = mean_mfcc('train')
     valid_data = mean_mfcc('valid')
 
