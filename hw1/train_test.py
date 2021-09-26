@@ -106,16 +106,21 @@ if __name__ == '__main__':
 
 
     '''
-    Feature summary through PCA
+    Feature vector compression
     '''
     print(f"train_X shape before PCA: {train_X.shape}")
    
-    if options.pca == True:
-        # PCA to MFCC+RMS
-        pca = PCA(n_components=options.n_components)
+    # Compress 
+    if options.compress == 'pca':
+        pca = PCA(n_components=options.dimension)
         train_X = pca.fit_transform(train_X)
         valid_X = pca.transform(valid_X)
-        print(f"train_X shape after pca: {train_X.shape}")
+
+    elif options.compress == 'dct':
+        train_X = dct(train_X, n=options.dimension)
+        valid_X = dct(valid_X, n=options.dimension)
+
+    print(f"train_X shape after compression: {train_X.shape}")
 
 
 
