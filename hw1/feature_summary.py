@@ -244,19 +244,6 @@ def double_delta_rms(dataset='train'):
 
 
 if __name__ == '__main__':
-    load_mfcc()
-    delta_mfcc()
-    double_delta_mfcc()
-
-    print()
-
-    load_rms()
-    delta_rms()
-    double_delta_rms()
-
-    quit()
-
-
     train_data = mean_mfcc('train')
     valid_data = mean_mfcc('valid')
 

@@ -16,20 +16,19 @@ from sklearn.decomposition import PCA
 from sklearn.linear_model import SGDClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
-from sklearn.mixture import GaussianMixture
 from scipy.fftpack import dct
 
 
 
 
-def train_model(train_X, train_Y, valid_X, valid_Y, hyper_param1, classifier='sgd'):
+def train_model(train_X, train_Y, valid_X, valid_Y, hyper_param1, options):
 
     # Choose a classifier (here, linear SVM)
-    if classifier == 'sgd':
+    if options.classifier == 'sgd':
         clf = SGDClassifier(verbose=0, loss="hinge", alpha=hyper_param1, max_iter=1000, penalty="l2", random_state=0)
-    elif classifier == 'knn':
-        clf = KNeighborsClassifier(n_neighbors=5)
-    elif classifier == 'svc':
+    elif options.classifier == 'knn':
+        clf = KNeighborsClassifier(n_neighbors=options.neighbors)
+    elif options.classifier == 'svc':
         clf = SVC()
 
     # train
@@ -39,7 +38,8 @@ def train_model(train_X, train_Y, valid_X, valid_Y, hyper_param1, classifier='sg
     valid_Y_hat = clf.predict(valid_X)
 
     accuracy = np.sum((valid_Y_hat == valid_Y))/300.0*100.0
-    print(f'alpha = {hyper_param1}, validation accuracy = {accuracy}%')
+    if options.classifier == 'sgd':
+        print(f'alpha = {hyper_param1}, validation accuracy = {accuracy}%')
     
     return clf, accuracy
 
@@ -48,7 +48,7 @@ def train_model(train_X, train_Y, valid_X, valid_Y, hyper_param1, classifier='sg
 
 if __name__ == '__main__':
     options = utils.train_parser()
-    print(f"\nReceived options:\n{options}")
+    print(f"\nReceived options:\n{options}\n")
 
 
 
@@ -108,8 +108,8 @@ if __name__ == '__main__':
     '''
     Feature vector compression
     '''
-    print(f"train_X shape before PCA: {train_X.shape}")
-   
+    print(f"train_X shape before {options.compress}: {train_X.shape}")
+    
     # Compress 
     if options.compress == 'pca':
         pca = PCA(n_components=options.dimension)
@@ -120,7 +120,7 @@ if __name__ == '__main__':
         train_X = dct(train_X, n=options.dimension)
         valid_X = dct(valid_X, n=options.dimension)
 
-    print(f"train_X shape after compression: {train_X.shape}")
+    print(f"train_X shape after {options.compress}: {train_X.shape}")
 
 
 
@@ -145,13 +145,11 @@ if __name__ == '__main__':
     valid_Y = np.repeat(cls, 30)
 
     # feature normalizaiton
-    # train_X = train_X.T
     train_X_mean = np.mean(train_X, axis=0)
     train_X = train_X - train_X_mean
     train_X_std = np.std(train_X, axis=0)
     train_X = train_X / (train_X_std + 1e-5)
     
-    # valid_X = valid_X.T
     valid_X = valid_X - train_X_mean
     valid_X = valid_X/(train_X_std + 1e-5)
 
@@ -161,7 +159,7 @@ if __name__ == '__main__':
     model = []
     valid_acc = []
     for a in alphas:
-        clf, acc = train_model(train_X, train_Y, valid_X, valid_Y, a, classifier=options.classifier)
+        clf, acc = train_model(train_X, train_Y, valid_X, valid_Y, a, options)
         model.append(clf)
         valid_acc.append(acc)
         
@@ -172,16 +170,18 @@ if __name__ == '__main__':
     valid_Y_hat = final_model.predict(valid_X)
 
     accuracy = np.sum((valid_Y_hat == valid_Y))/300.0*100.0
+    print('Final validation accuracy = ' + str(accuracy) + ' %')
 
     # Keep track of wrong guesses
     wrong = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     
     # Print all wrong guesses and correct answers
+    print()
     for i in range(0, 300):
         if valid_Y_hat[i] != valid_Y[i]:
-            # print(f'Answer: {valid_Y[i]}, Wrong guess: {valid_Y_hat[i]}')
+            print(f'Index: {i}, Answer: {valid_Y[i]}, Wrong guess: {valid_Y_hat[i]}')
             wrong[valid_Y[i]-1] += 1
+    print(f'Wrong guesses: {wrong}')
+
         
-    print(f'wrong answers: {wrong}')
-    print('final validation accuracy = ' + str(accuracy) + ' %')
 
