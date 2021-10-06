@@ -1,6 +1,11 @@
 import torch.nn as nn
 import torchaudio
 
+
+'''
+2D CNN
+'''
+
 class Baseline(nn.Module):
     def __init__(self,
                 sample_rate=16000,
@@ -137,12 +142,13 @@ class CNN2D(nn.Module):
         return x
 
 
+
 '''
 Metric Learning
 '''
 class LinearProjection(nn.Module):
     """
-    Backbone model for linear proejction
+    Backbone model for linear projection
     mel spectrogam to embedding
     """
     def __init__(self,
