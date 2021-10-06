@@ -18,3 +18,5 @@ hw2/waveform/
 *.gz
 
 hw2/annotations_final.csv
+
+hw2/__pycache__/
