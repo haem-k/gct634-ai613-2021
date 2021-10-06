@@ -12,3 +12,9 @@ audio/
 practice/.ipynb_checkpoints/
 
 *.zip
+
+hw2/waveform/
+
+*.gz
+
+hw2/annotations_final.csv
