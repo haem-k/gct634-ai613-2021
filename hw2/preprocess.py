@@ -15,7 +15,7 @@ TAGS = ['guitar','classical', 'slow','techno','strings','drums','electronic','ro
 
 
 def check_data():
-    df = pd.read_csv("./annotations_final.csv", sep="\t", index_col=0)
+    df = pd.read_csv("./data/annotations_final.csv", sep="\t", index_col=0)
     item = df.iloc[0]
     # check annotated tags
     item[item != 0] 

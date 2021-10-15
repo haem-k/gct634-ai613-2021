@@ -174,7 +174,7 @@ if __name__ == '__main__':
     input_length =  sample_rate * duration
 
     # Retrieve data as custom dataset
-    data_path = "./waveform"
+    data_path = "./data/waveform"
     tr_data = AudioDataset(data_path, input_length, df_train, id_to_path, 'TRAIN')
     va_data = AudioDataset(data_path, input_length, df_valid, id_to_path, 'VALID')
     te_data = AudioDataset(data_path, input_length, df_test, id_to_path, 'TEST')
@@ -191,8 +191,8 @@ if __name__ == '__main__':
     WEIGHT_DECAY = 0.0  # L2 regularization weight
 
     # Train Baseline model
-    # model = Baseline()
-    model = CNN2D()
+    model = Baseline()
+    # model = CNN2D()
     runner = Runner(model=model, lr = LR, momentum = MOMENTUM, weight_decay = WEIGHT_DECAY, sr = SR, tags=TAGS)
     for epoch in range(NUM_EPOCHS):
         train_loss = runner.run(loader_train, epoch, 'TRAIN')
@@ -215,7 +215,7 @@ if __name__ == '__main__':
     # Sample infernece id = 224
     id = 224
     audio_sample = df_test.loc[id]
-    waveform = np.load(os.path.join("./waveform", id_to_path[id].replace(".mp3",".npy")))
+    waveform = np.load(os.path.join("./data/waveform", id_to_path[id].replace(".mp3",".npy")))
     print("annotation tag: ",list(audio_sample[audio_sample != 0].index))
 
     annotation = auto_tagging(waveform, runner.model, input_length, TAGS, 2)
