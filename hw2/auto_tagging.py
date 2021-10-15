@@ -191,7 +191,8 @@ if __name__ == '__main__':
     WEIGHT_DECAY = 0.0  # L2 regularization weight
 
     # Train Baseline model
-    model = Baseline()
+    # model = Baseline()
+    model = CNN2D()
     runner = Runner(model=model, lr = LR, momentum = MOMENTUM, weight_decay = WEIGHT_DECAY, sr = SR, tags=TAGS)
     for epoch in range(NUM_EPOCHS):
         train_loss = runner.run(loader_train, epoch, 'TRAIN')

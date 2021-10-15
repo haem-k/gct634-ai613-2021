@@ -1,4 +1,6 @@
+from matplotlib.pyplot import polar
 import torch.nn as nn
+from torch.nn.modules.conv import Conv2d
 import torchaudio
 
 
@@ -60,15 +62,22 @@ class Baseline(nn.Module):
         self.linear = nn.Linear(32, n_class)
 
     def forward(self, x):
+        '''
+        torch.Size([16, 1, 96, 188])
+        torch.Size([16, 1, 96, 188])
+        torch.Size([16, 1, 96, 188])
+        torch.Size([16, 96, 188])
+        '''
+
         x = self.spec(x)
         x = self.to_db(x)
         x = self.spec_bn(x)
         x = x.squeeze(1) # for 1D conv
         x = self.conv0(x)
         x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.final_pool(x)
-        x = self.linear(x.squeeze(-1))
+        x = self.conv2(x)       # [16, 32, 8]
+        x = self.final_pool(x)  # [16, 32, 1]
+        x = self.linear(x.squeeze(-1)) # after squeeze: [16, 32]
         x = nn.Sigmoid()(x) # for binary cross entropy loss
         return x
 
@@ -88,16 +97,15 @@ class Conv_2d(nn.Module):
             pooling
         """
         super(Conv_2d, self).__init__()
-        self.conv = None
-        self.bn = None
-        self.relu = None
-        self.mp = None
+        self.conv = nn.Conv2d(input_channels, output_channels, kernel_size, stride, padding)
+        self.bn = nn.BatchNorm2d(output_channels)
+        self.relu = nn.ReLU()
+        self.mp = nn.MaxPool2d(pooling)
         #========================================
 
     def forward(self, x):
         out = self.mp(self.relu(self.bn(self.conv(x))))
         return out
-
 
 
 class CNN2D(nn.Module):
@@ -120,10 +128,10 @@ class CNN2D(nn.Module):
         self.spec_bn = nn.BatchNorm2d(1)
         # To do
         #========================================
-        self.layer1 = None
-        self.layer2 = None
-        self.layer3 = None
-        self.layer4 = None
+        self.layer1 = Conv_2d(1, 64, pooling=(4,4))
+        self.layer2 = Conv_2d(64, 128, pooling=(3,3))
+        self.layer3 = Conv_2d(128, 128, pooling=(3,3))
+        self.layer4 = Conv_2d(128, 64, pooling=(2,5))
         #========================================
         self.linear = nn.Linear(64, n_class)
     
@@ -203,3 +211,5 @@ class TripletLoss(nn.Module):
         neg_sim = nn.CosineSimilarity(dim=-1)(anchor, negative)
         losses = self.relu(self.margin - pos_sim + neg_sim)
         return losses.mean()
+
+
