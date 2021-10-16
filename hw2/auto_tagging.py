@@ -10,6 +10,8 @@ import torchaudio
 import torch
 import torch.nn as nn
 from sklearn import metrics
+
+import utils
 from dataset import *
 from models import *
 from preprocess import *
@@ -18,14 +20,11 @@ from tqdm import tqdm
 from glob import glob
 from torch.utils.data import Dataset, DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from time import sleep
-
-import IPython.display as ipd
 
 
 
 class Runner(object):
-    def __init__(self, model, lr, momentum, weight_decay, sr, tags):
+    def __init__(self, model, options, tags):
         """
         Args:
             model (nn.Module): pytorch model
@@ -35,13 +34,20 @@ class Runner(object):
             sr (float): stopping rate
             tags (list): tags with index
         """
-        self.optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, nesterov=True, weight_decay=weight_decay)
+        if options.optimizer == 'sgd':
+            self.optimizer = torch.optim.SGD(model.parameters(), lr=options.lr, momentum=options.momentum, nesterov=True, weight_decay=options.weight_decay)
+        elif options.optimizer == 'adam':
+            self.optimizer = torch.optim.Adam(model.parameters(), lr=options.lr)
+        
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode='min', factor=0.2, patience=5, verbose=True)
-        self.learning_rate = lr
-        self.stopping_rate = sr
+        self.learning_rate = options.lr
+        self.stopping_rate = options.sr
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.model = model.to(self.device)
-        self.criterion = torch.nn.BCELoss().to(self.device)
+        
+        if options.criterion == 'bce':
+            self.criterion = torch.nn.BCELoss().to(self.device)
+            
         self.tags = tags
 
     # Running model for train, test and validation. mode: 'train' for training, 'eval' for validation and test
@@ -166,6 +172,10 @@ if __name__ == '__main__':
     # Data Preprocess
     df_train, df_valid, df_test, id_to_path = preprocess_data(data_frame)
 
+    # Get user options
+    options = utils.train_multilabel()
+    print(f"Received options:\n{options}\n")
+
     # Prepare data
     BATCH_SIZE = 16
     num_workers = 2
@@ -184,16 +194,20 @@ if __name__ == '__main__':
     loader_test = DataLoader(te_data, batch_size=1, shuffle=False, num_workers=num_workers, drop_last=False) # for chunk inference
 
     # Training setup.
-    LR = 1e-3  # learning rate
-    SR = 1e-5  # stopping rate
-    MOMENTUM = 0.9
-    NUM_EPOCHS = 10
-    WEIGHT_DECAY = 0.0  # L2 regularization weight
+    LR = options.lr  # learning rate
+    SR = options.sr  # stopping rate
+    MOMENTUM = options.momentum
+    NUM_EPOCHS = options.num_epochs
+    WEIGHT_DECAY = options.weight_decay  # L2 regularization weight
 
-    # Train Baseline model
-    model = Baseline()
-    # model = CNN2D()
-    runner = Runner(model=model, lr = LR, momentum = MOMENTUM, weight_decay = WEIGHT_DECAY, sr = SR, tags=TAGS)
+    # Train model
+    if options.model == 'baseline':
+        model = Baseline()
+    elif options.model == 'cnn2d':
+        model = CNN2D()
+
+    runner = Runner(model=model, options=options, tags=TAGS)
+    
     for epoch in range(NUM_EPOCHS):
         train_loss = runner.run(loader_train, epoch, 'TRAIN')
         valid_loss = runner.run(loader_valid, epoch, 'VALID')
