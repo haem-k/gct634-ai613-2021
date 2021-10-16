@@ -5,7 +5,7 @@ import torchaudio
 
 
 '''
-2D CNN
+Multi-label classification
 '''
 
 class Baseline(nn.Module):

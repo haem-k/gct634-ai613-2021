@@ -44,7 +44,7 @@ class Metric_Runner(object):
 
     # Running model for train, test and validation. mode: 'train' for training, 'eval' for validation and test
     def run(self, dataloader, epoch, mode='TRAIN'):
-        self.model.train() if mode is 'TRAIN' else self.model.eval()
+        self.model.train() if mode == 'TRAIN' else self.model.eval()
 
         epoch_loss = 0
         pbar = tqdm(dataloader, desc=f'{mode} Epoch {epoch:02}')  # progress bar
@@ -57,7 +57,7 @@ class Metric_Runner(object):
             
             # Compute the loss.
             loss = self.criterion(anc_emb, pos_emb, neg_emb)
-            if mode is 'TRAIN':
+            if mode == 'TRAIN':
                 # Perform backward propagation to compute gradients.
                 loss.backward()
                 # Update the parameters.
@@ -100,6 +100,9 @@ class Metric_Runner(object):
     def multilabel_recall(self, sim_matrix, binary_labels, top_k):
         # =======================
         ## To-do
+        print(sim_matrix.size())
+        # print(sim_matrix)
+        quit()
         return None
         # =======================
 
@@ -131,10 +134,10 @@ if __name__ == '__main__':
     input_length =  sample_rate * duration
 
     # Retrieve data as custom dataset
-    data_path = "./waveform"
-    tr_data = AudioDataset(data_path, input_length, df_train, id_to_path, 'TRAIN')
-    va_data = AudioDataset(data_path, input_length, df_valid, id_to_path, 'VALID')
-    te_data = AudioDataset(data_path, input_length, df_test, id_to_path, 'TEST')
+    data_path = "./data/waveform"
+    tr_data = TripletDataset(data_path, id_to_path, input_length, df_train, TAGS, "TRAIN")
+    va_data = TripletDataset(data_path, id_to_path, input_length, df_valid, TAGS, "VALID")
+    te_data = TripletDataset(data_path, id_to_path, input_length, df_test, TAGS, "TEST")
 
     loader_train = DataLoader(tr_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=num_workers, drop_last=True)
     loader_valid = DataLoader(va_data, batch_size=BATCH_SIZE, shuffle=False, num_workers=num_workers, drop_last=False)
@@ -147,7 +150,7 @@ if __name__ == '__main__':
     NUM_EPOCHS = 3
     WEIGHT_DECAY = 0.0  # L2 regularization weight
     
-    model = LinearProjection()
+    model = LinearProjection() 
     runner = Metric_Runner(model=model, lr = LR, momentum = MOMENTUM, weight_decay = WEIGHT_DECAY, sr = SR)
     for epoch in range(NUM_EPOCHS):
         train_loss = runner.run(loader_train, epoch, 'TRAIN')
@@ -158,4 +161,4 @@ if __name__ == '__main__':
             break
 
     # TODO: multilabel_recall
-    # multilabel_recall = runner.test(loader_test)
+    multilabel_recall = runner.test(loader_test)
