@@ -22,6 +22,7 @@ from time import sleep
 
 import IPython.display as ipd
 
+torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 class Metric_Runner(object):
@@ -90,19 +91,20 @@ class Metric_Runner(object):
         sim_matrix = sim_matrix.detach().cpu().numpy()
         labels = labels.detach().cpu().numpy()
         multilabel_recall = {
-            "R@1" : self.multilabel_recall(sim_matrix, labels, top_k=1),
-            "R@2" : self.multilabel_recall(sim_matrix, labels, top_k=2),
-            "R@4" : self.multilabel_recall(sim_matrix, labels, top_k=4),
-            "R@8" : self.multilabel_recall(sim_matrix, labels, top_k=8),
+            "R@1" : self.multilabel_recall(sim_matrix, labels, top_k=1)
+            # "R@2" : self.multilabel_recall(sim_matrix, labels, top_k=2),
+            # "R@4" : self.multilabel_recall(sim_matrix, labels, top_k=4),
+            # "R@8" : self.multilabel_recall(sim_matrix, labels, top_k=8),
         }
         return multilabel_recall
 
     def multilabel_recall(self, sim_matrix, binary_labels, top_k):
         # =======================
         ## To-do
-        print(sim_matrix.size())
-        # print(sim_matrix)
-        quit()
+        print(sim_matrix)
+        print(binary_labels)
+        print(top_k)
+        # quit()
         return None
         # =======================
 
