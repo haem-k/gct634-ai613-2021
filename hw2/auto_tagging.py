@@ -171,16 +171,17 @@ if __name__ == '__main__':
 
     # Data Preprocess
     df_train, df_valid, df_test, id_to_path = preprocess_data(data_frame)
+    print()
 
     # Get user options
     options = utils.train_multilabel()
     print(f"Received options:\n{options}\n")
 
     # Prepare data
-    BATCH_SIZE = 16
-    num_workers = 2
-    sample_rate = 16000
-    duration = 3
+    BATCH_SIZE = options.batch_size
+    num_workers = options.num_workers
+    sample_rate = options.sample_rate
+    duration = options.duration
     input_length =  sample_rate * duration
 
     # Retrieve data as custom dataset
@@ -193,12 +194,13 @@ if __name__ == '__main__':
     loader_valid = DataLoader(va_data, batch_size=BATCH_SIZE, shuffle=False, num_workers=num_workers, drop_last=False)
     loader_test = DataLoader(te_data, batch_size=1, shuffle=False, num_workers=num_workers, drop_last=False) # for chunk inference
 
-    # Training setup.
-    LR = options.lr  # learning rate
-    SR = options.sr  # stopping rate
-    MOMENTUM = options.momentum
+    # Training setup. 
     NUM_EPOCHS = options.num_epochs
-    WEIGHT_DECAY = options.weight_decay  # L2 regularization weight
+    # LR = 1e-3  # learning rate
+    # SR = 1e-5  # stopping rate
+    # MOMENTUM = 0.9
+    # WEIGHT_DECAY = 0.0  # L2 regularization weight    -> Replaced with argparser
+
 
     # Train model
     if options.model == 'baseline':

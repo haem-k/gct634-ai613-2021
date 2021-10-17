@@ -9,6 +9,7 @@ import os
 import torchaudio
 import torch
 import torch.nn as nn
+import utils
 from sklearn import metrics
 from dataset import *
 from models import *
@@ -26,7 +27,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 class Metric_Runner(object):
-    def __init__(self, model, lr, momentum, weight_decay, sr):
+    def __init__(self, model, options):
         """
         Args:
             model (nn.Module): pytorch model
@@ -35,10 +36,14 @@ class Metric_Runner(object):
             weight_decay (float): weight_decay
             sr (float): stopping rate
         """
-        self.optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, nesterov=True, weight_decay=weight_decay)
+        if options.optimizer == 'sgd':
+            self.optimizer = torch.optim.SGD(model.parameters(), lr=options.lr, momentum=options.momentum, nesterov=True, weight_decay=options.weight_decay)
+        elif options.optimizer == 'adam':
+            self.optimizer = torch.optim.Adam(model.parameters(), lr=options.lr)
+
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode='min', factor=0.2, patience=5, verbose=True)
-        self.learning_rate = lr
-        self.stopping_rate = sr
+        self.learning_rate = options.lr
+        self.stopping_rate = options.sr
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.model = model.to(self.device)
         self.criterion = TripletLoss(margin=0.4).to(self.device)
@@ -82,8 +87,8 @@ class Metric_Runner(object):
                 embedding = self.model(waveform.to(self.device))
             embeddings.append(embedding.mean(0,True).detach().cpu())
             labels.append(label)
-        embeddings = torch.stack(embeddings).squeeze(1)
-        labels = torch.stack(labels).squeeze(1)
+        embeddings = torch.stack(embeddings).squeeze(1)     # [1677, 4096]
+        labels = torch.stack(labels).squeeze(1)             # [1677, 50]
 
         # calculate cosine similarity (if you use different distance metric, than you need to change this part)
         embedding_norm = embeddings / embeddings.norm(dim=-1, keepdim=True)
@@ -100,11 +105,13 @@ class Metric_Runner(object):
 
     def multilabel_recall(self, sim_matrix, binary_labels, top_k):
         # =======================
-        ## To-do
-        print(sim_matrix)
-        print(binary_labels)
-        print(top_k)
-        # quit()
+        # TODO
+
+        # sim_matrix:       (1677, 1677) -> 1677 이 쿼리
+        # binary_labels:    (1677, 50)
+        print(sim_matrix[0])
+        print(torch.topk(sim_matrix, top_k, 0))
+
         return None
         # =======================
 
@@ -120,19 +127,23 @@ class Metric_Runner(object):
 
 
 if __name__ == '__main__':
-
     # Data Checking
     data_frame = check_data()
     print()
 
     # Data Preprocess
     df_train, df_valid, df_test, id_to_path = preprocess_data(data_frame)
+    print()
+
+    # Get user options
+    options = utils.train_metric()
+    print(f"Received options:\n{options}\n")
 
     # Prepare data
-    BATCH_SIZE = 16
-    num_workers = 2
-    sample_rate = 16000
-    duration = 3
+    BATCH_SIZE = options.batch_size
+    num_workers = options.num_workers
+    sample_rate = options.sample_rate
+    duration = options.duration
     input_length =  sample_rate * duration
 
     # Retrieve data as custom dataset
@@ -146,21 +157,21 @@ if __name__ == '__main__':
     loader_test = DataLoader(te_data, batch_size=1, shuffle=False, num_workers=num_workers, drop_last=False) # for chunk inference
 
     # Training setup.
-    LR = 1e-3  # learning rate
-    SR = 1e-5  # stopping rate
-    MOMENTUM = 0.9
-    NUM_EPOCHS = 3
-    WEIGHT_DECAY = 0.0  # L2 regularization weight
+    NUM_EPOCHS = options.num_epochs
+    # LR = 1e-3  # learning rate
+    # SR = 1e-5  # stopping rate
+    # MOMENTUM = 0.9
+    # WEIGHT_DECAY = 0.0  # L2 regularization weight        -> Replaced with argparser
     
     model = LinearProjection() 
-    runner = Metric_Runner(model=model, lr = LR, momentum = MOMENTUM, weight_decay = WEIGHT_DECAY, sr = SR)
-    for epoch in range(NUM_EPOCHS):
-        train_loss = runner.run(loader_train, epoch, 'TRAIN')
-        valid_loss = runner.run(loader_valid, epoch, 'VALID')
-        print("[Epoch %d/%d] [Train Loss: %.4f] [Valid Loss: %.4f]" %
-                (epoch + 1, NUM_EPOCHS, train_loss, valid_loss))
-        if runner.early_stop(valid_loss, epoch + 1):
-            break
+    runner = Metric_Runner(model=model, options=options)
+    # for epoch in range(NUM_EPOCHS):
+    #     train_loss = runner.run(loader_train, epoch, 'TRAIN')
+    #     valid_loss = runner.run(loader_valid, epoch, 'VALID')
+    #     print("[Epoch %d/%d] [Train Loss: %.4f] [Valid Loss: %.4f]" %
+    #             (epoch + 1, NUM_EPOCHS, train_loss, valid_loss))
+    #     if runner.early_stop(valid_loss, epoch + 1):
+    #         break
 
     # TODO: multilabel_recall
     multilabel_recall = runner.test(loader_test)
