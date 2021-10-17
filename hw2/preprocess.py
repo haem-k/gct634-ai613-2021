@@ -46,9 +46,9 @@ def preprocess_data(df):
 
     total = len(train) + len(valid) + len(test)
     print(f'Total number of data: {total}')
-    print(f'Percentage of training data: {int(len(train) / total * 100)}%')
-    print(f'Percentage of validation data: {int(len(valid) / total * 100)}%')
-    print(f'Percentage of test data: {int(len(test) / total * 100)}%')
+    print(f'Training data: {len(train)} ({int(len(train) / total * 100)}%)')
+    print(f'Validation data: {len(valid)} ({int(len(valid) / total * 100)}%)')
+    print(f'Test data: {len(test)} ({int(len(test) / total * 100)}%)')
 
     df = df[TAGS]
     df_train = df.loc[train]
