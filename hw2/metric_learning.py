@@ -1,5 +1,6 @@
 import warnings
 import multiprocessing
+
 warnings.filterwarnings(action='ignore')
 
 import numpy as np
@@ -93,26 +94,57 @@ class Metric_Runner(object):
         # calculate cosine similarity (if you use different distance metric, than you need to change this part)
         embedding_norm = embeddings / embeddings.norm(dim=-1, keepdim=True)
         sim_matrix = embedding_norm @ embedding_norm.T
-        sim_matrix = sim_matrix.detach().cpu().numpy()
+        sim_matrix = sim_matrix.detach().cpu()
         labels = labels.detach().cpu().numpy()
         multilabel_recall = {
-            "R@1" : self.multilabel_recall(sim_matrix, labels, top_k=1)
-            # "R@2" : self.multilabel_recall(sim_matrix, labels, top_k=2),
-            # "R@4" : self.multilabel_recall(sim_matrix, labels, top_k=4),
-            # "R@8" : self.multilabel_recall(sim_matrix, labels, top_k=8),
+            "R@1" : self.multilabel_recall(sim_matrix, labels, top_k=1),
+            "R@2" : self.multilabel_recall(sim_matrix, labels, top_k=2),
+            "R@4" : self.multilabel_recall(sim_matrix, labels, top_k=4),
+            "R@8" : self.multilabel_recall(sim_matrix, labels, top_k=8),
         }
         return multilabel_recall
 
     def multilabel_recall(self, sim_matrix, binary_labels, top_k):
         # =======================
         # TODO
-
-        # sim_matrix:       (1677, 1677) -> 1677 이 쿼리
+        # sim_matrix:       (1677, 1677)
         # binary_labels:    (1677, 50)
-        print(sim_matrix[0])
-        print(torch.topk(sim_matrix, top_k, 0))
 
-        return None
+        recall = 0.0
+        num_test_samples = int(sim_matrix.shape[0])
+
+        # Get top K samples that are similar to each sample
+        _, indices = sim_matrix.topk(top_k+1)                # [1677, k] [1677, k]
+        
+        # For each test sample, compute correct answer ratio and average them
+        for i in range(num_test_samples):
+            # Get GT labels for i-th test sample
+            gt_labels = binary_labels[i]                        # [50]
+            
+            # Get indices for top-K similar samples
+            top_k_indices = indices[i]                          # [k]
+               
+            # For all top-K samples, add all number of labels that are contained in the samples 
+            num_correct = 0
+            for k in range(top_k+1):
+                # Do not consider similarity with oneself
+                if k==0:
+                    continue
+
+                k_index = top_k_indices[k]
+                k_gt_labels = binary_labels[k_index]
+                
+                # Count the identical labels
+                num_correct += np.sum(gt_labels==k_gt_labels)            
+            # print(f'{i}th num_correct: {num_correct}')
+
+            ratio = num_correct / gt_labels.shape[0]
+            if ratio > 1:
+                ratio = 1
+            recall += ratio
+
+        recall /= num_test_samples
+        return recall
         # =======================
 
     # Early stopping function for given validation loss
@@ -165,13 +197,14 @@ if __name__ == '__main__':
     
     model = LinearProjection() 
     runner = Metric_Runner(model=model, options=options)
-    # for epoch in range(NUM_EPOCHS):
-    #     train_loss = runner.run(loader_train, epoch, 'TRAIN')
-    #     valid_loss = runner.run(loader_valid, epoch, 'VALID')
-    #     print("[Epoch %d/%d] [Train Loss: %.4f] [Valid Loss: %.4f]" %
-    #             (epoch + 1, NUM_EPOCHS, train_loss, valid_loss))
-    #     if runner.early_stop(valid_loss, epoch + 1):
-    #         break
+    for epoch in range(NUM_EPOCHS):
+        train_loss = runner.run(loader_train, epoch, 'TRAIN')
+        valid_loss = runner.run(loader_valid, epoch, 'VALID')
+        print("[Epoch %d/%d] [Train Loss: %.4f] [Valid Loss: %.4f]" %
+                (epoch + 1, NUM_EPOCHS, train_loss, valid_loss))
+        if runner.early_stop(valid_loss, epoch + 1):
+            break
 
     # TODO: multilabel_recall
     multilabel_recall = runner.test(loader_test)
+    print(multilabel_recall)
