@@ -112,6 +112,7 @@ class Metric_Runner(object):
 
         recall = 0.0
         num_test_samples = int(sim_matrix.shape[0])
+        num_labels = int(binary_labels.shape[1])
 
         # Get top K samples that are similar to each sample
         _, indices = sim_matrix.topk(top_k+1)                # [1677, k] [1677, k]
@@ -125,7 +126,7 @@ class Metric_Runner(object):
             top_k_indices = indices[i]                          # [k]
                
             # For all top-K samples, add all number of labels that are contained in the samples 
-            num_correct = 0
+            correct = np.zeros((num_labels))
             for k in range(top_k+1):
                 # Do not consider similarity with oneself
                 if k==0:
@@ -135,10 +136,12 @@ class Metric_Runner(object):
                 k_gt_labels = binary_labels[k_index]
                 
                 # Count the identical labels
-                num_correct += np.sum(gt_labels==k_gt_labels)            
-            # print(f'{i}th num_correct: {num_correct}')
+                compare = list(gt_labels == k_gt_labels)
+                for j in range(num_labels):
+                    if compare[j]:
+                        correct[j] = 1
 
-            ratio = num_correct / gt_labels.shape[0]
+            ratio = np.sum(correct) / gt_labels.shape[0]
             if ratio > 1:
                 ratio = 1
             recall += ratio
