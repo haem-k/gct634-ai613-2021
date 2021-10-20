@@ -125,23 +125,24 @@ class Metric_Runner(object):
             # Get indices for top-K similar samples
             top_k_indices = indices[i]                          # [k]
                
-            # For all top-K samples, add all number of labels that are contained in the samples 
+            # For all top-K samples, count number of labels that are contained in the samples 
             correct = np.zeros((num_labels))
             for k in range(top_k+1):
                 # Do not consider similarity with oneself
                 if k==0:
+                    # print(top_k_indices[0])
                     continue
 
                 k_index = top_k_indices[k]
                 k_gt_labels = binary_labels[k_index]
                 
-                # Count the identical labels
-                compare = list(gt_labels == k_gt_labels)
+                # Count the '1' labels
+                compare = gt_labels * k_gt_labels
                 for j in range(num_labels):
-                    if compare[j]:
+                    if compare[j] == 1:
                         correct[j] = 1
-
-            ratio = np.sum(correct) / gt_labels.shape[0]
+                        
+            ratio = np.sum(correct) / np.sum(gt_labels)
             if ratio > 1:
                 ratio = 1
             recall += ratio

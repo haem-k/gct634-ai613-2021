@@ -27,6 +27,10 @@ def check_data():
 
 
 def preprocess_data(df):
+    df_filter =  df[TAGS].sum(axis=1)
+    use_id = df_filter[df_filter != 0].index
+    df = df.loc[use_id]
+
     train = []
     valid = []
     test = []
