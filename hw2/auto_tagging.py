@@ -199,7 +199,8 @@ if __name__ == '__main__':
     loader_test = DataLoader(te_data, batch_size=1, shuffle=False, num_workers=num_workers, drop_last=False) # for chunk inference
 
     # Training setup. 
-    NUM_EPOCHS = options.num_epochs
+    # NUM_EPOCHS = options.num_epochs
+    NUM_EPOCHS = 100000
     # LR = 1e-3  # learning rate
     # SR = 1e-5  # stopping rate
     # MOMENTUM = 0.9
