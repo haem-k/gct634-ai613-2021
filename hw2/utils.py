@@ -7,7 +7,7 @@ Parser utils
 def train_multilabel():
     parser = argparse.ArgumentParser(description="Training model for multi-label classification")
     
-    parser.add_argument('--model',           type=str,       default='baseline',        choices=['baseline', 'cnn2d'],    help='batch size')
+    parser.add_argument('--model',           type=str,       default='baseline',        choices=['baseline', 'cnn2d', 'cnn2ddeep'],    help='batch size')
     parser.add_argument('--batch_size',      type=int,       default=16,                                                  help='batch size')
     parser.add_argument('--num_workers',     type=int,       default=2,                                                   help='number of workers')
     parser.add_argument('--sample_rate',     type=int,       default=16000,                                               help='sampling rate for audio data')

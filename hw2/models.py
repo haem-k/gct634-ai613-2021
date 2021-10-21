@@ -150,6 +150,53 @@ class CNN2D(nn.Module):
         return x
 
 
+class CNN2D_Deep(nn.Module):
+    def __init__(self,
+                sample_rate=16000,
+                n_fft=512,
+                f_min=0.0,
+                f_max=8000.0,
+                n_mels=96,
+                n_class=50):
+        super(CNN2D_Deep, self).__init__()
+
+        # Spectrogram
+        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
+                                                            n_fft=n_fft,
+                                                            f_min=f_min,
+                                                            f_max=f_max,
+                                                            n_mels=n_mels)
+        self.to_db = torchaudio.transforms.AmplitudeToDB()
+        self.spec_bn = nn.BatchNorm2d(1)
+
+        self.layer1 = Conv_2d(1, 64)
+        self.layer2 = Conv_2d(64, 128)
+        self.layer3 = Conv_2d(128, 256)
+        self.layer4 = Conv_2d(256, 256)
+        self.layer5 = Conv_2d(256, 128)
+        self.layer6 = Conv_2d(128, 64)
+        self.linear = nn.Linear(128, n_class)
+    
+
+    def forward(self, x):
+        x = self.spec(x)
+        x = self.to_db(x)
+        x = self.spec_bn(x)
+        x = self.layer1(x)        # [16, 64, 48, 94]  
+        x = self.layer2(x)        # [16, 128, 24, 47]  
+        x = self.layer3(x)        # [16, 256, 12, 23]  
+        x = self.layer4(x)        # [16, 256, 6, 11]  
+        x = self.layer5(x)        # [16, 128, 3, 5]
+        x = self.layer6(x)        # [16, 64, 1, 2]
+        x = x.view(x.size(0), -1) # [16, 128]
+        x = self.linear(x)
+        x = nn.Sigmoid()(x) # for binary cross entropy loss
+        # quit()
+        return x
+
+
+
+
 
 '''
 Metric Learning

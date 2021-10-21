@@ -211,6 +211,8 @@ if __name__ == '__main__':
         model = Baseline()
     elif options.model == 'cnn2d':
         model = CNN2D()
+    elif options.model == 'cnn2ddeep':
+        model = CNN2D_Deep()
 
     runner = Runner(model=model, options=options, tags=TAGS)
     
