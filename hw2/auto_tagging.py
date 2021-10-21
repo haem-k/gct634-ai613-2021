@@ -214,6 +214,8 @@ if __name__ == '__main__':
         model = CNN2D()
     elif options.model == 'cnn2ddeep':
         model = CNN2D_Deep()
+    elif options.model == 'cnntf':
+        model = CNNTF()
 
     runner = Runner(model=model, options=options, tags=TAGS)
     

@@ -2,6 +2,7 @@ from matplotlib.pyplot import polar
 import torch.nn as nn
 from torch.nn.modules.conv import Conv2d
 import torchaudio
+import torch
 
 
 '''
@@ -191,8 +192,80 @@ class CNN2D_Deep(nn.Module):
         x = x.view(x.size(0), -1) # [16, 128]
         x = self.linear(x)
         x = nn.Sigmoid()(x) # for binary cross entropy loss
-        # quit()
         return x
+
+
+class CNNTF(nn.Module):
+    def __init__(self,
+                sample_rate=16000,
+                n_fft=512,
+                f_min=0.0,
+                f_max=8000.0,
+                n_mels=96,
+                n_class=50):
+        super(CNNTF, self).__init__()
+
+        # Spectrogram
+        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
+                                                            n_fft=n_fft,
+                                                            f_min=f_min,
+                                                            f_max=f_max,
+                                                            n_mels=n_mels)
+        self.to_db = torchaudio.transforms.AmplitudeToDB()
+        self.spec_bn = nn.BatchNorm2d(1)        # [16, 1, 96, 188]
+
+        self.freq_0 = Conv_2d(1, 32, kernel_size=(48, 1))
+        # self.freq_1 = Conv_2d(1, 32, kernel_size=(24, 1))
+
+        self.time_0 = Conv_2d(1, 32, kernel_size=(1, 64))
+
+        self.freq_maxpool = nn.MaxPool2d((1, 95))
+        self.time_maxpool = nn.MaxPool2d((49, 1))
+
+        self.linear1 = nn.Linear(32*88, 128)
+        self.dropout1 = nn.Dropout()
+        self.linear2= nn.Linear(128, n_class)
+        
+        
+
+
+
+    def forward(self, x):
+        x = self.spec(x)
+        x = self.to_db(x)
+        x = self.spec_bn(x) # [16, 1, 96, 188]
+        
+        x0 = self.freq_0(x) # [16, 32, 25, 95]
+        # print(x0.shape)
+        x0 = self.freq_maxpool(x0)
+        # print(x0.shape)
+
+        x1 = self.time_0(x) # [16, 32, 49, 63]
+        # print(x1.shape)
+        x1 = self.time_maxpool(x1)
+        # print(x1.shape)
+
+        x0 = x0.squeeze()
+        x1 = x1.squeeze()
+        # print()
+        # print(x0.shape)
+        # print(x1.shape)
+
+        # x = [torch.randn(1, 32), torch.randn(1, 196)]
+        x_TF = torch.cat((x0, x1), 2)
+        # print(x_TF.shape)
+
+        x_TF = x_TF.view(x_TF.size(0), -1)
+        # print(x_TF.shape)
+        x_TF = self.linear1(x_TF)
+        x_TF = self.dropout1(x_TF)
+        x_TF = self.linear2(x_TF)
+        # print(x_TF.shape)
+
+        x_TF = nn.Sigmoid()(x_TF)
+
+        # quit()
+        return x_TF
 
 
 
