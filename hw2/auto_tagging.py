@@ -10,6 +10,7 @@ import torchaudio
 import torch
 import torch.nn as nn
 from sklearn import metrics
+from torch.utils.tensorboard import SummaryWriter
 
 import utils
 from dataset import *
@@ -44,10 +45,11 @@ class Runner(object):
         self.stopping_rate = options.sr
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.model = model.to(self.device)
-        
+        self.writer = SummaryWriter(f'runs/{options.model}_lr_{options.lr}')
+
         if options.criterion == 'bce':
             self.criterion = torch.nn.BCELoss().to(self.device)
-            
+        
         self.tags = tags
 
     # Running model for train, test and validation. mode: 'train' for training, 'eval' for validation and test
@@ -81,6 +83,8 @@ class Runner(object):
             epoch_loss += batch_size * loss.item()
 
         epoch_loss = epoch_loss / len(dataloader.dataset)
+        self.writer.add_scalar(f"Loss/train", epoch_loss, epoch+1)
+
         return epoch_loss
 
 
@@ -218,7 +222,8 @@ if __name__ == '__main__':
         print()
         if runner.early_stop(valid_loss, epoch + 1):
             break
-
+    
+    runner.writer.flush()
 
     # Test the trained Baseline model
     roc_aucs, epoch_loss, tag_wise_rocaucs = runner.test(loader_test)
