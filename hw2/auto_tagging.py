@@ -146,7 +146,7 @@ def auto_tagging(waveform, model, input_length, tags, topk):
     chunk = np.zeros((chunk_number, input_length))
     
     for idx in range(chunk.shape[0]):
-        chunk[idx] = waveform[idx:idx+input_length]  
+        chunk[idx] = waveform[idx * input_length:(idx+1) * input_length]  
     
     audio_tensor = torch.from_numpy(chunk.astype(np.float32))
     predictions = model(audio_tensor.unsqueeze(1).to(device))
