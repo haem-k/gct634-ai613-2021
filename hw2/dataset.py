@@ -36,7 +36,7 @@ class AudioDataset(Dataset):
             chunk_number = waveform.shape[0] // self.input_length
             chunk = np.zeros((chunk_number, self.input_length))
             for idx in range(chunk.shape[0]):
-                chunk[idx] = waveform[idx:idx+self.input_length]
+                chunk[idx] = waveform[idx * self.input_length:(idx+1) * self.input_length]
             audio = chunk
         return audio
             
@@ -85,7 +85,7 @@ class TripletDataset(Dataset):
             chunk_number = waveform.shape[0] // self.input_length
             chunk = np.zeros((chunk_number, self.input_length))
             for idx in range(chunk.shape[0]):
-                chunk[idx] = waveform[idx:idx+self.input_length]
+                chunk[idx] = waveform[idx * self.input_length:(idx+1) * self.input_length]
             audio = chunk.astype(np.float32)
             label = item.values.astype(np.float32)
             return audio, label
