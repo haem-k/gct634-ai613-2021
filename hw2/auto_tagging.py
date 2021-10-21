@@ -45,7 +45,7 @@ class Runner(object):
         self.stopping_rate = options.sr
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.model = model.to(self.device)
-        self.writer = SummaryWriter(f'runs/{options.model}_lr_{options.lr}')
+        self.writer = SummaryWriter(f'runs/{options.model}_{options.optimizer}_lr_{options.lr}')
 
         if options.criterion == 'bce':
             self.criterion = torch.nn.BCELoss().to(self.device)
@@ -233,7 +233,7 @@ if __name__ == '__main__':
 
     result_auc = pd.DataFrame([tag_wise_rocaucs[tag] for tag in TAGS], columns=['rocauc'], index=TAGS)
     result_auc.sort_values(by='rocauc', ascending=False).plot.bar(figsize=(18,6),rot=60) # which tag is easy and hard task
-
+    plt.show()
 
     # Sample infernece id = 224
     id = 224
