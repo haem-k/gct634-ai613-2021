@@ -45,7 +45,7 @@ class Runner(object):
         self.stopping_rate = options.sr
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.model = model.to(self.device)
-        self.writer = SummaryWriter(f'runs/{options.model}_{options.optimizer}_lr_{options.lr}')
+        self.writer = SummaryWriter(f'runs/{options.model}_{options.optimizer}_{options.writer}')
 
         if options.criterion == 'bce':
             self.criterion = torch.nn.BCELoss().to(self.device)
@@ -83,7 +83,7 @@ class Runner(object):
             epoch_loss += batch_size * loss.item()
 
         epoch_loss = epoch_loss / len(dataloader.dataset)
-        self.writer.add_scalar(f"Loss/train", epoch_loss, epoch+1)
+        self.writer.add_scalar(f"Loss/{mode}", epoch_loss, epoch+1)
 
         return epoch_loss
 
