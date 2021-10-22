@@ -45,7 +45,7 @@ class Runner(object):
         self.stopping_rate = options.sr
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.model = model.to(self.device)
-        self.writer = SummaryWriter(f'runs/{options.model}_{options.optimizer}_{options.writer}')
+        self.writer = SummaryWriter(f'runs/classify/{options.model}_{options.optimizer}_{options.writer}')
 
         if options.criterion == 'bce':
             self.criterion = torch.nn.BCELoss().to(self.device)

@@ -20,7 +20,9 @@ from tqdm import tqdm
 from glob import glob
 from torch.utils.data import Dataset, DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.utils.tensorboard import SummaryWriter
 from time import sleep
+
 
 import IPython.display as ipd
 
@@ -48,6 +50,7 @@ class Metric_Runner(object):
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.model = model.to(self.device)
         self.criterion = TripletLoss(margin=0.4).to(self.device)
+        self.writer = SummaryWriter(f'runs/metric/{options.model}_{options.optimizer}_{options.writer}')
 
     # Running model for train, test and validation. mode: 'train' for training, 'eval' for validation and test
     def run(self, dataloader, epoch, mode='TRAIN'):
@@ -75,6 +78,8 @@ class Metric_Runner(object):
             batch_size = anc_emb.shape[0]
             epoch_loss += batch_size * loss.item()
         epoch_loss = epoch_loss / len(dataloader.dataset)
+        self.writer.add_scalar(f"Loss/{mode}", epoch_loss, epoch+1)
+
         return epoch_loss
 
     def test(self, dataloader):
@@ -193,14 +198,16 @@ if __name__ == '__main__':
     loader_test = DataLoader(te_data, batch_size=1, shuffle=False, num_workers=num_workers, drop_last=False) # for chunk inference
 
     # Training setup.
-    NUM_EPOCHS = options.num_epochs
+    NUM_EPOCHS = 100000
     # LR = 1e-3  # learning rate
     # SR = 1e-5  # stopping rate
     # MOMENTUM = 0.9
     # WEIGHT_DECAY = 0.0  # L2 regularization weight        -> Replaced with argparser
+    if options.model == 'linear':
+        model = LinearProjection() 
     
-    model = LinearProjection() 
     runner = Metric_Runner(model=model, options=options)
+    
     for epoch in range(NUM_EPOCHS):
         train_loss = runner.run(loader_train, epoch, 'TRAIN')
         valid_loss = runner.run(loader_valid, epoch, 'VALID')
@@ -208,7 +215,11 @@ if __name__ == '__main__':
                 (epoch + 1, NUM_EPOCHS, train_loss, valid_loss))
         if runner.early_stop(valid_loss, epoch + 1):
             break
+    
+    runner.writer.flush()
 
     # TODO: multilabel_recall
     multilabel_recall = runner.test(loader_test)
     print(multilabel_recall)
+
+    

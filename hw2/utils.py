@@ -29,12 +29,12 @@ def train_metric():
     parser = argparse.ArgumentParser(description="Training model for metric learning")
     
     parser.add_argument('--model',           type=str,       default='linear',          choices=['linear'],               help='batch size')
+    parser.add_argument('--writer',          type=str,       default='',                                                                        help='postfix for tensorboard file')
     parser.add_argument('--batch_size',      type=int,       default=16,                                                  help='batch size')
     parser.add_argument('--num_workers',     type=int,       default=2,                                                   help='number of workers')
     parser.add_argument('--sample_rate',     type=int,       default=16000,                                               help='sampling rate for audio data')
     parser.add_argument('--duration',        type=int,       default=3,                                                   help='learning rate')
     parser.add_argument('--optimizer',       type=str,       default='sgd',             choices=['adam', 'sgd'],          help='optimizer')
-    parser.add_argument('--criterion',       type=str,       default='bce',             choices=['bce'],                  help='criterion')
 
     parser.add_argument('--num_epochs',      type=int,       default=3,                help='number of training epoch')
     parser.add_argument('--lr',              type=float,     default=1e-3,              help='learning rate')
