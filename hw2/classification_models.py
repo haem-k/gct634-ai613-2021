@@ -223,7 +223,6 @@ class CNNTF(nn.Module):
         self.time_maxpool = nn.MaxPool2d((49, 1))
 
         self.linear1 = nn.Linear(32*88, n_class)
-        self.dropout1 = nn.Dropout()
 
 
     def forward(self, x):
@@ -243,7 +242,6 @@ class CNNTF(nn.Module):
         x_TF = torch.cat((x0, x1), 2)
         x_TF = x_TF.view(x_TF.size(0), -1)
         x_TF = self.linear1(x_TF)
-        x_TF = self.dropout1(x_TF)
         x_TF = nn.Sigmoid()(x_TF)
 
         return x_TF
