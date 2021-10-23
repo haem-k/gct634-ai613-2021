@@ -14,7 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 import utils
 from dataset import *
-from models import *
+from classification_models import *
 from preprocess import *
 
 from tqdm import tqdm

@@ -13,7 +13,7 @@ import torch.nn as nn
 import utils
 from sklearn import metrics
 from dataset import *
-from models import *
+from metric_models import *
 from preprocess import *
 
 from tqdm import tqdm
@@ -49,7 +49,7 @@ class Metric_Runner(object):
         self.stopping_rate = options.sr
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.model = model.to(self.device)
-        self.criterion = TripletLoss(margin=0.4).to(self.device)
+        self.criterion = TripletLoss(margin=0.4, options=options).to(self.device)
         self.writer = SummaryWriter(f'runs/metric/{options.model}_{options.optimizer}_{options.writer}')
 
     # Running model for train, test and validation. mode: 'train' for training, 'eval' for validation and test
@@ -95,7 +95,7 @@ class Metric_Runner(object):
             labels.append(label)
         embeddings = torch.stack(embeddings).squeeze(1)     # [1677, 4096]
         labels = torch.stack(labels).squeeze(1)             # [1677, 50]
-
+        # !
         # calculate cosine similarity (if you use different distance metric, than you need to change this part)
         embedding_norm = embeddings / embeddings.norm(dim=-1, keepdim=True)
         sim_matrix = embedding_norm @ embedding_norm.T
@@ -205,6 +205,12 @@ if __name__ == '__main__':
     # WEIGHT_DECAY = 0.0  # L2 regularization weight        -> Replaced with argparser
     if options.model == 'linear':
         model = LinearProjection() 
+    elif options.model == 'conv1d':
+        model = Conv1dProjection()
+    elif options.model == 'conv2d':
+        model = Conv2dProjection()
+    elif options.model == 'tf':
+        model = TFProjection()
     
     runner = Metric_Runner(model=model, options=options)
     
@@ -222,4 +228,3 @@ if __name__ == '__main__':
     multilabel_recall = runner.test(loader_test)
     print(multilabel_recall)
 
-    

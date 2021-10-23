@@ -1,4 +1,3 @@
-from matplotlib.pyplot import polar
 import torch.nn as nn
 from torch.nn.modules.conv import Conv2d
 import torchaudio
@@ -485,67 +484,5 @@ class CNNTF2(nn.Module):
         return x_TF
 
 
-
-
-'''
-Metric Learning
-'''
-class LinearProjection(nn.Module):
-    """
-    Backbone model for linear projection
-    mel spectrogam to embedding
-    """
-    def __init__(self,
-                sample_rate=16000,
-                n_fft=512,
-                f_min=0.0,
-                f_max=8000.0,
-                n_mels=96):
-        """
-        Args:
-            sample_rate (int): path to load dataset from
-            n_fft (int): number of samples for fft
-            f_min (float): min freq
-            f_max (float): max freq
-            n_mels (float): number of mel bin
-            n_class (int): number of class
-        """
-        super(LinearProjection, self).__init__()
-        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
-                                                            n_fft=n_fft,
-                                                            f_min=f_min,
-                                                            f_max=f_max,
-                                                            n_mels=n_mels)
-        self.to_db = torchaudio.transforms.AmplitudeToDB()
-        self.spec_bn = nn.BatchNorm2d(1)
-        self.embedding_size = 4096
-        self.linear_proj = nn.Linear(n_mels * 188, self.embedding_size) # (freq * time) to embedding dim
-
-    def forward(self, x):
-        x = self.spec(x)
-        x = self.to_db(x)
-        x = self.spec_bn(x)
-        x = x.squeeze(1)
-        x = x.view(x.size(0), -1)
-        embedding = self.linear_proj(x)
-        return embedding
-
-
-
-class TripletLoss(nn.Module):
-    def __init__(self, margin):
-        """
-        Args:
-            margin:
-        """
-        super(TripletLoss, self).__init__()
-        self.margin = margin
-        self.relu = nn.ReLU()
-
-    def forward(self, anchor, positive, negative):
-        pos_sim = nn.CosineSimilarity(dim=-1)(anchor, positive)
-        neg_sim = nn.CosineSimilarity(dim=-1)(anchor, negative)
-        losses = self.relu(self.margin - pos_sim + neg_sim)
-        return losses.mean()
 
 
