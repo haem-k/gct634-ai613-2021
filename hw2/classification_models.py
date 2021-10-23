@@ -56,27 +56,25 @@ class Baseline(nn.Module):
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=3, stride=3)
             )
+
         # Aggregate features over temporal dimension.
         self.final_pool = nn.AdaptiveAvgPool1d(1)
+
         # Predict tag using the aggregated features.
         self.linear = nn.Linear(32, n_class)
 
-    def forward(self, x):
-        '''
-        torch.Size([16, 1, 96, 188])
-        torch.Size([16, 1, 96, 188])
-        torch.Size([16, 1, 96, 188])
-        torch.Size([16, 96, 188])
-        '''
 
+    def forward(self, x):
         x = self.spec(x)
         x = self.to_db(x)
         x = self.spec_bn(x)
+
         x = x.squeeze(1) # for 1D conv
         x = self.conv0(x)
         x = self.conv1(x)
         x = self.conv2(x)       # [16, 32, 8]
         x = self.final_pool(x)  # [16, 32, 1]
+
         x = self.linear(x.squeeze(-1)) # after squeeze: [16, 32]
         x = nn.Sigmoid()(x) # for binary cross entropy loss
         return x
@@ -106,6 +104,7 @@ class Conv_2d(nn.Module):
     def forward(self, x):
         out = self.mp(self.relu(self.bn(self.conv(x))))
         return out
+
 
 
 class CNN2D(nn.Module):
@@ -148,6 +147,7 @@ class CNN2D(nn.Module):
         x = self.linear(x)
         x = nn.Sigmoid()(x) # for binary cross entropy loss
         return x
+
 
 
 class CNN2D_Deep(nn.Module):
@@ -196,6 +196,7 @@ class CNN2D_Deep(nn.Module):
         return x
 
 
+
 class CNNTF(nn.Module):
     def __init__(self,
                 sample_rate=16000,
@@ -215,74 +216,38 @@ class CNNTF(nn.Module):
         self.to_db = torchaudio.transforms.AmplitudeToDB()
         self.spec_bn = nn.BatchNorm2d(1)        # [16, 1, 96, 188]
 
-        '''
-        torch.Size([16, 32, 25, 95])
-        torch.Size([16, 32, 25, 1])
-        torch.Size([16, 32, 49, 63])
-        torch.Size([16, 32, 1, 63])
-
-        torch.Size([16, 32, 25])
-        torch.Size([16, 32, 63])
-        torch.Size([16, 32, 88])
-        torch.Size([16, 2816])
-        torch.Size([16, 50])
-
-        '''
-
-
         self.freq_0 = Conv_2d(1, 32, kernel_size=(48, 1))
-        # self.freq_1 = Conv_2d(1, 32, kernel_size=(24, 1))
-
         self.time_0 = Conv_2d(1, 32, kernel_size=(1, 64))
 
         self.freq_maxpool = nn.MaxPool2d((1, 95))
         self.time_maxpool = nn.MaxPool2d((49, 1))
 
-        # self.linear1 = nn.Linear(32*88, 128)
         self.linear1 = nn.Linear(32*88, n_class)
         self.dropout1 = nn.Dropout()
-        # self.linear2= nn.Linear(128, n_class)
-        
-        
-
 
 
     def forward(self, x):
         x = self.spec(x)
         x = self.to_db(x)
-        x = self.spec_bn(x) # [16, 1, 96, 188]
+        x = self.spec_bn(x) 
         
-        x0 = self.freq_0(x) # [16, 32, 25, 95]
-        # print(x0.shape)
+        x0 = self.freq_0(x) 
         x0 = self.freq_maxpool(x0)
-        # print(x0.shape)
 
-        x1 = self.time_0(x) # [16, 32, 49, 63]
-        # print(x1.shape)
+        x1 = self.time_0(x) 
         x1 = self.time_maxpool(x1)
-        # print(x1.shape)
 
         x0 = x0.squeeze()
         x1 = x1.squeeze()
-        # print()
-        # print(x0.shape)
-        # print(x1.shape)
 
-        # x = [torch.randn(1, 32), torch.randn(1, 196)]
         x_TF = torch.cat((x0, x1), 2)
-        # print(x_TF.shape)
-
         x_TF = x_TF.view(x_TF.size(0), -1)
-        # print(x_TF.shape)
         x_TF = self.linear1(x_TF)
         x_TF = self.dropout1(x_TF)
-        # x_TF = self.linear2(x_TF)
-        # print(x_TF.shape)
-
         x_TF = nn.Sigmoid()(x_TF)
 
-        # quit()
         return x_TF
+
 
 
 class CNNTF_Deep(nn.Module):
@@ -302,22 +267,7 @@ class CNNTF_Deep(nn.Module):
                                                             f_max=f_max,
                                                             n_mels=n_mels)
         self.to_db = torchaudio.transforms.AmplitudeToDB()
-        self.spec_bn = nn.BatchNorm2d(1)        # [16, 1, 96, 188]
-
-        '''
-        torch.Size([16, 32, 25, 95])
-        torch.Size([16, 32, 25, 1])
-        torch.Size([16, 32, 49, 63])
-        torch.Size([16, 32, 1, 63])
-
-        torch.Size([16, 32, 25])
-        torch.Size([16, 32, 63])
-        torch.Size([16, 32, 88])
-        torch.Size([16, 2816])
-        torch.Size([16, 50])
-
-        '''
-
+        self.spec_bn = nn.BatchNorm2d(1) 
 
         self.freq_0 = Conv_2d(1, 32, kernel_size=(48, 1))
         self.freq_1 = Conv_2d(32, 64, kernel_size=(24, 1))
@@ -337,50 +287,27 @@ class CNNTF_Deep(nn.Module):
     def forward(self, x):
         x = self.spec(x)
         x = self.to_db(x)
-        x = self.spec_bn(x) # [16, 1, 96, 188]
+        x = self.spec_bn(x)
         
-        x0 = self.freq_0(x) # [16, 32, 25, 95]
-        # print(x0.shape)
+        x0 = self.freq_0(x)
         x0 = self.freq_1(x0)
-        #print(x0.shape)
 
-
-
-        x1 = self.time_0(x) # [16, 32, 49, 63]
-        #print(x1.shape)
+        x1 = self.time_0(x)
         x1 = self.time_1(x1)
-        #print(x1.shape)
-        
 
         x0 = self.freq_maxpool(x0)
         x1 = self.time_maxpool(x1)
-        #print(x0.shape)
-        #print(x1.shape)
-
-        #print()
-        x0 = x0.squeeze()
-        x1 = x1.squeeze()
-        # #print()
-        #print(x0.shape)
-        #print(x1.shape)
 
         x0 = x0.squeeze()
         x1 = x1.squeeze()
-
 
         x_TF = torch.cat((x0, x1), 2)
-        #print(x_TF.shape)
-
         x_TF = x_TF.view(x_TF.size(0), -1)
-        #print(x_TF.shape)
         x_TF = self.linear1(x_TF)
         x_TF = self.dropout1(x_TF)
         x_TF = self.linear2(x_TF)
-        #print(x_TF.shape)
-
         x_TF = nn.Sigmoid()(x_TF)
 
-        # quit()
         return x_TF
 
 
@@ -402,21 +329,12 @@ class CNNTF2(nn.Module):
                                                             f_max=f_max,
                                                             n_mels=n_mels)
         self.to_db = torchaudio.transforms.AmplitudeToDB()
-        self.spec_bn = nn.BatchNorm2d(1)        # [16, 1, 96, 188]
-
-
+        self.spec_bn = nn.BatchNorm2d(1) 
 
         self.freq_0 = Conv_2d(1, 32, kernel_size=(48, 1))
         self.freq_1 = Conv_2d(1, 32, kernel_size=(24, 1))
         self.time_0 = Conv_2d(1, 32, kernel_size=(1, 64))
         self.time_1 = Conv_2d(1, 32, kernel_size=(1, 32))
-        '''
-        torch.Size([16, 32, 25, 95])
-        torch.Size([16, 32, 37, 95])
-        torch.Size([16, 32, 49, 63])
-        torch.Size([16, 32, 49, 79])
-
-        '''
 
         self.freq_maxpool = nn.MaxPool2d((1, 95))
         self.time_maxpool = nn.MaxPool2d((49, 1))
@@ -425,62 +343,36 @@ class CNNTF2(nn.Module):
         self.dropout1 = nn.Dropout()
         self.linear2= nn.Linear(128, n_class)
         
-        
-
-
 
     def forward(self, x):
         x = self.spec(x)
         x = self.to_db(x)
-        x = self.spec_bn(x) # [16, 1, 96, 188]
+        x = self.spec_bn(x)
         
         x_freq0 = self.freq_0(x) 
-        # # print(x_freq0.shape)
         x_freq1 = self.freq_1(x)
-        # print(x_freq1.shape)
 
         x_time0 = self.time_0(x) 
-        # print(x_time0.shape)
         x_time1 = self.time_1(x)
-        # print(x_time1.shape)
 
-        # print()
         x_freq0 = self.freq_maxpool(x_freq0)
         x_freq1 = self.freq_maxpool(x_freq1)
-        # print(x_freq0.shape)
-        # print(x_freq1.shape)
 
         x_time0 = self.time_maxpool(x_time0)
         x_time1 = self.time_maxpool(x_time1)
-        # print(x_time0.shape)
-        # print(x_time1.shape)
 
-        # print()
         x_freq0 = x_freq0.squeeze()
         x_freq1 = x_freq1.squeeze()
         x_time0 = x_time0.squeeze()
         x_time1 = x_time1.squeeze()
         
-        # print(x_freq0.shape)
-        # print(x_freq1.shape)
-        # print(x_time0.shape)
-        # print(x_time1.shape)
-        
-        # print()
         x_TF = torch.cat((x_freq0, x_freq1, x_time0, x_time1), 2)
-        # print(x_TF.shape)
-
         x_TF = x_TF.view(x_TF.size(0), -1)
-        # print(x_TF.shape)
-
         x_TF = self.linear1(x_TF)
         x_TF = self.dropout1(x_TF)
         x_TF = self.linear2(x_TF)
-        # print(x_TF.shape)
-
         x_TF = nn.Sigmoid()(x_TF)
 
-        # quit()
         return x_TF
 
 

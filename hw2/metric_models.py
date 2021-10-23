@@ -1,5 +1,4 @@
 import torch.nn as nn
-from torch.nn.modules.conv import Conv2d
 import torchaudio
 import torch
 
@@ -47,6 +46,7 @@ class LinearProjection(nn.Module):
         x = x.view(x.size(0), -1)
         embedding = self.linear_proj(x)
         return embedding
+
 
 
 class Conv1dProjection(nn.Module):
@@ -113,21 +113,21 @@ class Conv1dProjection(nn.Module):
         x = self.spec(x)
         x = self.to_db(x)
         x = self.spec_bn(x)
-        x = x.squeeze(1) # for 1D conv
+        x = x.squeeze(1)
+
         x = self.conv0(x)
         x = self.conv1(x)
-        x = self.conv2(x)       # [16, 32, 8]
-        x = self.final_pool(x)  # [16, 32, 1]
-        x = x.squeeze(-1) # after squeeze: [16, 32]
+        x = self.conv2(x)       
+        x = self.final_pool(x)  
+        x = x.squeeze(-1) 
         x = x.view(x.size(0), -1)
 
         return x
 
 
+
 class Conv_2d(nn.Module):
     def __init__(self, input_channels, output_channels, kernel_size=3, stride=1, padding=1, pooling=2):
-        # To do
-        #========================================
         """
         Args:
             input_channels, 
@@ -142,11 +142,11 @@ class Conv_2d(nn.Module):
         self.bn = nn.BatchNorm2d(output_channels)
         self.relu = nn.ReLU()
         self.mp = nn.MaxPool2d(pooling)
-        #========================================
 
     def forward(self, x):
         out = self.mp(self.relu(self.bn(self.conv(x))))
         return out
+
 
 
 class Conv2dProjection(nn.Module):
@@ -167,13 +167,11 @@ class Conv2dProjection(nn.Module):
                                                             n_mels=n_mels)
         self.to_db = torchaudio.transforms.AmplitudeToDB()
         self.spec_bn = nn.BatchNorm2d(1)
-        # To do
-        #========================================
+
         self.layer1 = Conv_2d(1, 64, pooling=(4,4))
         self.layer2 = Conv_2d(64, 128, pooling=(3,3))
         self.layer3 = Conv_2d(128, 128, pooling=(3,3))
         self.layer4 = Conv_2d(128, 64, pooling=(2,5))
-        #========================================
     
 
     def forward(self, x):
@@ -186,6 +184,8 @@ class Conv2dProjection(nn.Module):
         x = self.layer4(x)
         x = x.view(x.size(0), -1)
         return x
+
+
 
 class TFProjection(nn.Module):
     def __init__(self,
@@ -204,76 +204,152 @@ class TFProjection(nn.Module):
                                                             f_max=f_max,
                                                             n_mels=n_mels)
         self.to_db = torchaudio.transforms.AmplitudeToDB()
-        self.spec_bn = nn.BatchNorm2d(1)        # [16, 1, 96, 188]
-
-        '''
-        torch.Size([16, 32, 25, 95])
-        torch.Size([16, 32, 25, 1])
-        torch.Size([16, 32, 49, 63])
-        torch.Size([16, 32, 1, 63])
-
-        torch.Size([16, 32, 25])
-        torch.Size([16, 32, 63])
-        torch.Size([16, 32, 88])
-        torch.Size([16, 2816])
-        torch.Size([16, 50])
-
-        '''
-
+        self.spec_bn = nn.BatchNorm2d(1)     
 
         self.freq_0 = Conv_2d(1, 32, kernel_size=(48, 1))
-        # self.freq_1 = Conv_2d(1, 32, kernel_size=(24, 1))
-
         self.time_0 = Conv_2d(1, 32, kernel_size=(1, 64))
-
         self.freq_maxpool = nn.MaxPool2d((1, 95))
         self.time_maxpool = nn.MaxPool2d((49, 1))
-
-        self.linear1 = nn.Linear(32*88, 128)
-        # self.linear1 = nn.Linear(32*88, n_class)
-        # self.dropout1 = nn.Dropout()
-        # self.linear2= nn.Linear(128, n_class)
-        
-        
-
+        self.linear1 = nn.Linear(32*88, 256)
 
 
     def forward(self, x):
         x = self.spec(x)
         x = self.to_db(x)
-        x = self.spec_bn(x) # [16, 1, 96, 188]
+        x = self.spec_bn(x) 
         
-        x0 = self.freq_0(x) # [16, 32, 25, 95]
-        # print(x0.shape)
+        x0 = self.freq_0(x) 
         x0 = self.freq_maxpool(x0)
-        # print(x0.shape)
 
-        x1 = self.time_0(x) # [16, 32, 49, 63]
-        # print(x1.shape)
+        x1 = self.time_0(x) 
         x1 = self.time_maxpool(x1)
-        # print(x1.shape)
 
         x0 = x0.squeeze()
         x1 = x1.squeeze()
-        # print()
-        # print(x0.shape)
-        # print(x1.shape)
 
-        # x = [torch.randn(1, 32), torch.randn(1, 196)]
         x_TF = torch.cat((x0, x1), 2)
-        # print(x_TF.shape)
-
         x_TF = x_TF.view(x_TF.size(0), -1)
-        # print(x_TF.shape)
         x_TF = self.linear1(x_TF)
-        # x_TF = self.dropout1(x_TF)
-        # x_TF = self.linear2(x_TF)
-        # print(x_TF.shape)
 
-        # x_TF = nn.Sigmoid()(x_TF)
-
-        # quit()
         return x_TF
+
+
+
+class TFDeepProjection(nn.Module):
+    def __init__(self,
+                sample_rate=16000,
+                n_fft=512,
+                f_min=0.0,
+                f_max=8000.0,
+                n_mels=96,
+                n_class=50):
+        super(TFDeepProjection, self).__init__()
+
+        # Spectrogram
+        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
+                                                            n_fft=n_fft,
+                                                            f_min=f_min,
+                                                            f_max=f_max,
+                                                            n_mels=n_mels)
+        self.to_db = torchaudio.transforms.AmplitudeToDB()
+        self.spec_bn = nn.BatchNorm2d(1) 
+
+        self.freq_0 = Conv_2d(1, 32, kernel_size=(48, 1))
+        self.freq_1 = Conv_2d(32, 64, kernel_size=(24, 1))
+
+        self.time_0 = Conv_2d(1, 32, kernel_size=(1, 64))
+        self.time_1 = Conv_2d(32, 64, kernel_size=(1, 32))
+
+        self.freq_maxpool = nn.MaxPool2d((1, 48))
+        self.time_maxpool = nn.MaxPool2d((25, 1))
+
+        self.linear1 = nn.Linear(64*19, 256)
+        
+    
+
+    def forward(self, x):
+        x = self.spec(x)
+        x = self.to_db(x)
+        x = self.spec_bn(x)
+        
+        x0 = self.freq_0(x)
+        x0 = self.freq_1(x0)
+
+        x1 = self.time_0(x)
+        x1 = self.time_1(x1)
+
+        x0 = self.freq_maxpool(x0)
+        x1 = self.time_maxpool(x1)
+
+        x0 = x0.squeeze()
+        x1 = x1.squeeze()
+
+        x_TF = torch.cat((x0, x1), 2)
+        x_TF = x_TF.view(x_TF.size(0), -1)
+        x_TF = self.linear1(x_TF)
+
+        return x_TF
+
+
+
+class TF2Projection(nn.Module):
+    def __init__(self,
+                sample_rate=16000,
+                n_fft=512,
+                f_min=0.0,
+                f_max=8000.0,
+                n_mels=96,
+                n_class=50):
+        super(TF2Projection, self).__init__()
+
+        # Spectrogram
+        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
+                                                            n_fft=n_fft,
+                                                            f_min=f_min,
+                                                            f_max=f_max,
+                                                            n_mels=n_mels)
+        self.to_db = torchaudio.transforms.AmplitudeToDB()
+        self.spec_bn = nn.BatchNorm2d(1) 
+
+        self.freq_0 = Conv_2d(1, 32, kernel_size=(48, 1))
+        self.freq_1 = Conv_2d(1, 32, kernel_size=(24, 1))
+        self.time_0 = Conv_2d(1, 32, kernel_size=(1, 64))
+        self.time_1 = Conv_2d(1, 32, kernel_size=(1, 32))
+
+        self.freq_maxpool = nn.MaxPool2d((1, 95))
+        self.time_maxpool = nn.MaxPool2d((49, 1))
+
+        self.linear1 = nn.Linear(32*204, 256)
+        
+
+    def forward(self, x):
+        x = self.spec(x)
+        x = self.to_db(x)
+        x = self.spec_bn(x)
+        
+        x_freq0 = self.freq_0(x) 
+        x_freq1 = self.freq_1(x)
+
+        x_time0 = self.time_0(x) 
+        x_time1 = self.time_1(x)
+
+        x_freq0 = self.freq_maxpool(x_freq0)
+        x_freq1 = self.freq_maxpool(x_freq1)
+
+        x_time0 = self.time_maxpool(x_time0)
+        x_time1 = self.time_maxpool(x_time1)
+
+        x_freq0 = x_freq0.squeeze()
+        x_freq1 = x_freq1.squeeze()
+        x_time0 = x_time0.squeeze()
+        x_time1 = x_time1.squeeze()
+        
+        x_TF = torch.cat((x_freq0, x_freq1, x_time0, x_time1), 2)
+        x_TF = x_TF.view(x_TF.size(0), -1)
+        x_TF = self.linear1(x_TF)
+
+        return x_TF
+
 
 
 class TripletLoss(nn.Module):
@@ -291,9 +367,6 @@ class TripletLoss(nn.Module):
         if self.distance == 'cos':
             pos_sim = nn.CosineSimilarity(dim=-1)(anchor, positive)
             neg_sim = nn.CosineSimilarity(dim=-1)(anchor, negative)
-        elif self.distance == 'euclidean':
-            pos_sim = ((anchor - positive)**2).sum(axis=0)
-            neg_sim = ((anchor - negative)**2).sum(axis=0)
         losses = self.relu(self.margin - pos_sim + neg_sim)
         return losses.mean()
 

@@ -50,6 +50,7 @@ class Metric_Runner(object):
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.model = model.to(self.device)
         self.criterion = TripletLoss(margin=0.4, options=options).to(self.device)
+        self.distance = options.distance
         self.writer = SummaryWriter(f'runs/metric/{options.model}_{options.optimizer}_{options.writer}')
 
     # Running model for train, test and validation. mode: 'train' for training, 'eval' for validation and test
@@ -93,12 +94,13 @@ class Metric_Runner(object):
                 embedding = self.model(waveform.to(self.device))
             embeddings.append(embedding.mean(0,True).detach().cpu())
             labels.append(label)
-        embeddings = torch.stack(embeddings).squeeze(1)     # [1677, 4096]
-        labels = torch.stack(labels).squeeze(1)             # [1677, 50]
-        # !
+        embeddings = torch.stack(embeddings).squeeze(1)     
+        labels = torch.stack(labels).squeeze(1)             
+        
         # calculate cosine similarity (if you use different distance metric, than you need to change this part)
         embedding_norm = embeddings / embeddings.norm(dim=-1, keepdim=True)
         sim_matrix = embedding_norm @ embedding_norm.T
+        
         sim_matrix = sim_matrix.detach().cpu()
         labels = labels.detach().cpu().numpy()
         multilabel_recall = {
@@ -109,33 +111,31 @@ class Metric_Runner(object):
         }
         return multilabel_recall
 
+
     def multilabel_recall(self, sim_matrix, binary_labels, top_k):
         # =======================
         # TODO
-        # sim_matrix:       (1677, 1677)
-        # binary_labels:    (1677, 50)
 
         recall = 0.0
         num_test_samples = int(sim_matrix.shape[0])
         num_labels = int(binary_labels.shape[1])
 
         # Get top K samples that are similar to each sample
-        _, indices = sim_matrix.topk(top_k+1)                # [1677, k] [1677, k]
+        _, indices = sim_matrix.topk(top_k+1)                
         
         # For each test sample, compute correct answer ratio and average them
         for i in range(num_test_samples):
             # Get GT labels for i-th test sample
-            gt_labels = binary_labels[i]                        # [50]
+            gt_labels = binary_labels[i]                     
             
             # Get indices for top-K similar samples
-            top_k_indices = indices[i]                          # [k]
+            top_k_indices = indices[i]                       
                
             # For all top-K samples, count number of labels that are contained in the samples 
             correct = np.zeros((num_labels))
             for k in range(top_k+1):
                 # Do not consider similarity with oneself
                 if k==0:
-                    # print(top_k_indices[0])
                     continue
 
                 k_index = top_k_indices[k]
@@ -211,6 +211,10 @@ if __name__ == '__main__':
         model = Conv2dProjection()
     elif options.model == 'tf':
         model = TFProjection()
+    elif options.model == 'tfdeep':
+        model = TFDeepProjection()
+    elif options.model == 'tf2':
+        model = TF2Projection()
     
     runner = Metric_Runner(model=model, options=options)
     

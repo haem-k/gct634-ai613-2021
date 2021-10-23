@@ -28,9 +28,8 @@ def train_multilabel():
 def train_metric():
     parser = argparse.ArgumentParser(description="Training model for metric learning")
     
-    parser.add_argument('--model',           type=str,       default='linear',          choices=['linear', 'conv1d', 'conv2d', 'tf'],               help='model architecture')
+    parser.add_argument('--model',           type=str,       default='linear',          choices=['linear', 'conv1d', 'conv2d', 'tf', 'tfdeep', 'tf2'],               help='model architecture')
     parser.add_argument('--writer',          type=str,       default='',                                                                        help='postfix for tensorboard file')
-    parser.add_argument('--distance',           type=str,       default='cos',          choices=['cos', 'euclidean'],               help='distance measure between the embeddings')
     parser.add_argument('--batch_size',      type=int,       default=16,                                                  help='batch size')
     parser.add_argument('--num_workers',     type=int,       default=2,                                                   help='number of workers')
     parser.add_argument('--sample_rate',     type=int,       default=16000,                                               help='sampling rate for audio data')
