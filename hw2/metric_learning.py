@@ -131,7 +131,7 @@ class Metric_Runner(object):
             # Get indices for top-K similar samples
             top_k_indices = indices[i]                       
                
-            # For all top-K samples, count number of labels that are contained in the samples 
+            # For all top-K samples, keeps the labels that are contained in the samples 
             correct = np.zeros((num_labels))
             for k in range(top_k+1):
                 # Do not consider similarity with oneself
@@ -199,10 +199,7 @@ if __name__ == '__main__':
 
     # Training setup.
     NUM_EPOCHS = 100000
-    # LR = 1e-3  # learning rate
-    # SR = 1e-5  # stopping rate
-    # MOMENTUM = 0.9
-    # WEIGHT_DECAY = 0.0  # L2 regularization weight        -> Replaced with argparser
+
     if options.model == 'linear':
         model = LinearProjection() 
     elif options.model == 'conv1d':

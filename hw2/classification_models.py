@@ -72,8 +72,8 @@ class Baseline(nn.Module):
         x = x.squeeze(1) # for 1D conv
         x = self.conv0(x)
         x = self.conv1(x)
-        x = self.conv2(x)       # [16, 32, 8]
-        x = self.final_pool(x)  # [16, 32, 1]
+        x = self.conv2(x)       
+        x = self.final_pool(x)  
 
         x = self.linear(x.squeeze(-1)) # after squeeze: [16, 32]
         x = nn.Sigmoid()(x) # for binary cross entropy loss

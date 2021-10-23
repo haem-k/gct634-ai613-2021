@@ -103,13 +103,6 @@ class Conv1dProjection(nn.Module):
 
 
     def forward(self, x):
-        '''
-        torch.Size([16, 1, 96, 188])
-        torch.Size([16, 1, 96, 188])
-        torch.Size([16, 1, 96, 188])
-        torch.Size([16, 96, 188])
-        '''
-
         x = self.spec(x)
         x = self.to_db(x)
         x = self.spec_bn(x)
@@ -172,6 +165,7 @@ class Conv2dProjection(nn.Module):
         self.layer2 = Conv_2d(64, 128, pooling=(3,3))
         self.layer3 = Conv_2d(128, 128, pooling=(3,3))
         self.layer4 = Conv_2d(128, 64, pooling=(2,5))
+        self.linear = nn.Linear(128, 128)
     
 
     def forward(self, x):
@@ -183,6 +177,7 @@ class Conv2dProjection(nn.Module):
         x = self.layer3(x)
         x = self.layer4(x)
         x = x.view(x.size(0), -1)
+        x = self.linear(x)
         return x
 
 
@@ -193,8 +188,7 @@ class TFProjection(nn.Module):
                 n_fft=512,
                 f_min=0.0,
                 f_max=8000.0,
-                n_mels=96,
-                n_class=50):
+                n_mels=96):
         super(TFProjection, self).__init__()
 
         # Spectrogram
@@ -241,8 +235,7 @@ class TFDeepProjection(nn.Module):
                 n_fft=512,
                 f_min=0.0,
                 f_max=8000.0,
-                n_mels=96,
-                n_class=50):
+                n_mels=96):
         super(TFDeepProjection, self).__init__()
 
         # Spectrogram
@@ -298,8 +291,7 @@ class TF2Projection(nn.Module):
                 n_fft=512,
                 f_min=0.0,
                 f_max=8000.0,
-                n_mels=96,
-                n_class=50):
+                n_mels=96):
         super(TF2Projection, self).__init__()
 
         # Spectrogram
