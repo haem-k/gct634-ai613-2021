@@ -50,7 +50,6 @@ class Metric_Runner(object):
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.model = model.to(self.device)
         self.criterion = TripletLoss(margin=0.4, options=options).to(self.device)
-        self.distance = options.distance
         self.writer = SummaryWriter(f'runs/metric/{options.model}_{options.optimizer}_{options.writer}')
 
     # Running model for train, test and validation. mode: 'train' for training, 'eval' for validation and test

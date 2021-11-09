@@ -46,10 +46,7 @@ class Runner(object):
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.model = model.to(self.device)
         self.writer = SummaryWriter(f'runs/classify/{options.model}_{options.optimizer}_{options.writer}')
-
-        if options.criterion == 'bce':
-            self.criterion = torch.nn.BCELoss().to(self.device)
-        
+        self.criterion = torch.nn.BCELoss().to(self.device)
         self.tags = tags
 
     # Running model for train, test and validation. mode: 'train' for training, 'eval' for validation and test

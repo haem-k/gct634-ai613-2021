@@ -165,7 +165,7 @@ class Conv2dProjection(nn.Module):
         self.layer2 = Conv_2d(64, 128, pooling=(3,3))
         self.layer3 = Conv_2d(128, 128, pooling=(3,3))
         self.layer4 = Conv_2d(128, 64, pooling=(2,5))
-        self.linear = nn.Linear(128, 128)
+        self.linear = nn.Linear(64, 64)
     
 
     def forward(self, x):
@@ -178,6 +178,7 @@ class Conv2dProjection(nn.Module):
         x = self.layer4(x)
         x = x.view(x.size(0), -1)
         x = self.linear(x)
+        
         return x
 
 
@@ -353,12 +354,10 @@ class TripletLoss(nn.Module):
         super(TripletLoss, self).__init__()
         self.margin = margin
         self.relu = nn.ReLU()
-        self.distance = options.distance
 
     def forward(self, anchor, positive, negative):
-        if self.distance == 'cos':
-            pos_sim = nn.CosineSimilarity(dim=-1)(anchor, positive)
-            neg_sim = nn.CosineSimilarity(dim=-1)(anchor, negative)
+        pos_sim = nn.CosineSimilarity(dim=-1)(anchor, positive)
+        neg_sim = nn.CosineSimilarity(dim=-1)(anchor, negative)
         losses = self.relu(self.margin - pos_sim + neg_sim)
         return losses.mean()
 
