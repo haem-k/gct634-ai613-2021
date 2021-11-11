@@ -28,3 +28,7 @@ hw2/runs/
 hw2/images/
 
 hw3/data/
+
+hw3/runs/
+
+hw3/__pycache__/
