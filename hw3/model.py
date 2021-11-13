@@ -89,15 +89,15 @@ class Transcriber(nn.Module):
 
 
 class Transcriber_RNN(nn.Module):
-    def __init__(self, cnn_unit, fc_unit):
+    def __init__(self, hidden_unit=88):
         super().__init__()
         self.melspectrogram = LogMelSpectrogram()
         
-        self.frame_rnn = nn.LSTM(N_MELS, 88, num_layers=2, batch_first=True, bidirectional=True)
-        self.frame_fc = nn.Linear(88*2, 88)
+        self.frame_rnn = nn.LSTM(N_MELS, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
+        self.frame_fc = nn.Linear(hidden_unit*2, hidden_unit)
         
-        self.onset_rnn = nn.LSTM(N_MELS, 88, num_layers=2, batch_first=True, bidirectional=True)
-        self.onset_fc = nn.Linear(88*2, 88)
+        self.onset_rnn = nn.LSTM(N_MELS, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
+        self.onset_fc = nn.Linear(hidden_unit*2, hidden_unit)
 
     def forward(self, audio):
         # TODO: Question 1
@@ -113,17 +113,17 @@ class Transcriber_RNN(nn.Module):
 
 
 class Transcriber_CRNN(nn.Module):
-    def __init__(self, cnn_unit, fc_unit):
+    def __init__(self, cnn_unit, fc_unit, hidden_unit=88):
         super().__init__()
         self.melspectrogram = LogMelSpectrogram()
 
         self.frame_conv_stack = ConvStack(N_MELS, cnn_unit, fc_unit)
-        self.frame_rnn = nn.LSTM(fc_unit, 88, num_layers=2, batch_first=True, bidirectional=True)
-        self.frame_fc = nn.Linear(88*2, 88)
+        self.frame_rnn = nn.LSTM(fc_unit, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
+        self.frame_fc = nn.Linear(hidden_unit*2, hidden_unit)
         
         self.onset_conv_stack = ConvStack(N_MELS, cnn_unit, fc_unit)
-        self.onset_rnn = nn.LSTM(fc_unit, 88, num_layers=2, batch_first=True, bidirectional=True)
-        self.onset_fc = nn.Linear(88*2, 88)
+        self.onset_rnn = nn.LSTM(fc_unit, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
+        self.onset_fc = nn.Linear(hidden_unit*2, hidden_unit)
 
     def forward(self, audio):
         # TODO: Question 2
@@ -141,35 +141,32 @@ class Transcriber_CRNN(nn.Module):
 
 
 class Transcriber_ONF(nn.Module):
-    def __init__(self, cnn_unit, fc_unit):
+    def __init__(self, cnn_unit, fc_unit, hidden_unit=88):
         super().__init__()
         self.melspectrogram = LogMelSpectrogram()
 
         self.onset_conv_stack = ConvStack(N_MELS, cnn_unit, fc_unit)
-        self.onset_rnn = nn.LSTM(fc_unit, 88, num_layers=2, batch_first=True, bidirectional=True)
-        self.onset_fc = nn.Linear(88*2, 88)
+        self.onset_rnn = nn.LSTM(fc_unit, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
+        self.onset_fc = nn.Linear(hidden_unit*2, hidden_unit)
 
         self.frame_conv_stack = ConvStack(N_MELS, cnn_unit, fc_unit)
-        self.frame_fc1 = nn.Linear(fc_unit, 88)
-        self.frame_rnn = nn.LSTM(88*2, 88, num_layers=2, batch_first=True, bidirectional=True)
-        self.frame_fc2 = nn.Linear(88*2, 88)
+        self.frame_fc1 = nn.Linear(fc_unit, hidden_unit)
+        self.frame_rnn = nn.LSTM(hidden_unit*2, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
+        self.frame_fc2 = nn.Linear(hidden_unit*2, hidden_unit)
         
-
-
 
     def forward(self, audio):
         # TODO: Question 3
         mel = self.melspectrogram(audio)    # [16, 200, 229]
         
-        x = self.onset_conv_stack(mel)  # (B, T, C)
-        x = self.onset_rnn(x)
-        onset_out = self.onset_fc(x[0])
-        connection = onset_out.clone().detach() # [16, 200, 88]
+        onset = self.onset_conv_stack(mel)  # (B, T, C)
+        onset, _ = self.onset_rnn(onset)
+        onset_out = self.onset_fc(onset)
 
-        x = self.frame_conv_stack(mel)      # [16, 200, 256]
-        x = self.frame_fc1(x)
-        combined = torch.cat((x, connection), dim=-1)
-        x = self.frame_rnn(combined)               # [16, 200, 88*2]    
-        frame_out = self.frame_fc2(x[0])
+        frame = self.frame_conv_stack(mel)      # [16, 200, 256]
+        frame = self.frame_fc1(frame)
+        combined = torch.cat((frame, onset_out.detach()), dim=-1)
+        frame_out, _ = self.frame_rnn(combined)               # [16, 200, 88*2]    
+        frame_out = self.frame_fc2(frame_out)
 
         return frame_out, onset_out
