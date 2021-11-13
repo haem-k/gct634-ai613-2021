@@ -169,7 +169,7 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--sequence_length', default=102400, type=int)
     parser.add_argument('-lr', '--learning_rate', default=6e-4, type=float)
     parser.add_argument('-b', '--batch_size', default=16, type=int)
-    parser.add_argument('-i', '--iterations', default=10000, type=int)
+    parser.add_argument('-i', '--iterations', default=5000, type=int)
     parser.add_argument('-vi', '--validation_interval', default=1000, type=int)
     parser.add_argument('-wd', '--weight_decay', default=0)
     parser.add_argument('-cnn', '--cnn_unit', default=48, type=int)
