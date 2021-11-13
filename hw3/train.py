@@ -72,7 +72,7 @@ def train(model_type,
     if model_type == 'baseline':
         model = Transcriber(cnn_unit=cnn_unit, fc_unit=fc_unit)
     elif model_type == 'rnn':
-        model = Transcriber_RNN(cnn_unit=cnn_unit, fc_unit=fc_unit)
+        model = Transcriber_RNN()
     elif model_type == 'crnn':
         model = Transcriber_CRNN(cnn_unit=cnn_unit, fc_unit=fc_unit)
     elif model_type == 'ONF':
