@@ -93,20 +93,20 @@ class Transcriber_RNN(nn.Module):
         super().__init__()
         self.melspectrogram = LogMelSpectrogram()
         
-        self.frame_rnn = nn.LSTM(N_MELS, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
+        self.frame_lstm = nn.LSTM(N_MELS, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
         self.frame_fc = nn.Linear(hidden_unit*2, hidden_unit)
         
-        self.onset_rnn = nn.LSTM(N_MELS, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
+        self.onset_lstm = nn.LSTM(N_MELS, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
         self.onset_fc = nn.Linear(hidden_unit*2, hidden_unit)
 
     def forward(self, audio):
         # TODO: Question 1
         mel = self.melspectrogram(audio)    # [16, 200, 229]
         
-        frame, _ = self.frame_rnn(mel)             # [16, 200, 88*2]    
+        frame, _ = self.frame_lstm(mel)             # [16, 200, 88*2]    
         frame_out = self.frame_fc(frame)
 
-        onset, _ = self.onset_rnn(mel)
+        onset, _ = self.onset_lstm(mel)
         onset_out = self.onset_fc(onset)
         
         return frame_out, onset_out
@@ -118,11 +118,11 @@ class Transcriber_CRNN(nn.Module):
         self.melspectrogram = LogMelSpectrogram()
 
         self.frame_conv_stack = ConvStack(N_MELS, cnn_unit, fc_unit)
-        self.frame_rnn = nn.LSTM(fc_unit, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
+        self.frame_lstm = nn.LSTM(fc_unit, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
         self.frame_fc = nn.Linear(hidden_unit*2, hidden_unit)
         
         self.onset_conv_stack = ConvStack(N_MELS, cnn_unit, fc_unit)
-        self.onset_rnn = nn.LSTM(fc_unit, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
+        self.onset_lstm = nn.LSTM(fc_unit, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
         self.onset_fc = nn.Linear(hidden_unit*2, hidden_unit)
 
     def forward(self, audio):
@@ -130,11 +130,11 @@ class Transcriber_CRNN(nn.Module):
         mel = self.melspectrogram(audio)    # [16, 200, 229]
         
         frame_out = self.frame_conv_stack(mel)      # [16, 200, 256]
-        frame_out, _ = self.frame_rnn(frame_out)    # [16, 200, 88*2]    
+        frame_out, _ = self.frame_lstm(frame_out)    # [16, 200, 88*2]    
         frame_out = self.frame_fc(frame_out)    # [16, 200, 88]
 
         onset_out = self.onset_conv_stack(mel)  # (B, T, C)
-        onset_out, _ = self.onset_rnn(onset_out)
+        onset_out, _ = self.onset_lstm(onset_out)
         onset_out = self.onset_fc(onset_out)
 
         return frame_out, onset_out
@@ -145,14 +145,15 @@ class Transcriber_ONF(nn.Module):
         super().__init__()
         self.melspectrogram = LogMelSpectrogram()
 
-        self.onset_conv_stack = ConvStack(N_MELS, cnn_unit, fc_unit)
-        self.onset_rnn = nn.LSTM(fc_unit, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
-        self.onset_fc = nn.Linear(hidden_unit*2, hidden_unit)
-
         self.frame_conv_stack = ConvStack(N_MELS, cnn_unit, fc_unit)
-        self.frame_fc1 = nn.Linear(fc_unit, hidden_unit)
-        self.frame_rnn = nn.LSTM(hidden_unit*2, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
-        self.frame_fc2 = nn.Linear(hidden_unit*2, hidden_unit)
+        self.frame_fc = nn.Linear(fc_unit, hidden_unit)
+
+        self.onset_conv_stack = ConvStack(N_MELS, cnn_unit, fc_unit)
+        self.onset_lstm = nn.LSTM(fc_unit, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
+        self.onset_fc = nn.Linear(hidden_unit*2, hidden_unit)
+        
+        self.combined_lstm = nn.LSTM(hidden_unit*2, hidden_unit, num_layers=2, batch_first=True, bidirectional=True)
+        self.combined_fc = nn.Linear(hidden_unit*2, hidden_unit)
         
 
     def forward(self, audio):
@@ -160,15 +161,14 @@ class Transcriber_ONF(nn.Module):
         mel = self.melspectrogram(audio)    # [16, 200, 229]
         
         onset_out = self.onset_conv_stack(mel)  # (B, T, C)
-        onset_out, _ = self.onset_rnn(onset_out)
+        onset_out, _ = self.onset_lstm(onset_out)
         onset_out = self.onset_fc(onset_out)
 
         frame = self.frame_conv_stack(mel)      # [16, 200, 256]
-        frame = self.frame_fc1(frame)
+        frame = self.frame_fc(frame)
+
         combined = torch.cat((frame, onset_out.detach()), dim=-1)
-        frame_out, _ = self.frame_rnn(combined)               # [16, 200, 88*2]    
-        frame_out = self.frame_fc2(frame_out)
+        frame_out, _ = self.combined_lstm(combined)               # [16, 200, 88*2]    
+        frame_out = self.combined_fc(frame_out)
 
         return frame_out, onset_out
-
-
