@@ -34,3 +34,5 @@ hw3/runs/
 hw3/__pycache__/
 
 hw3/notebooks/.ipynb_checkpoints/
+
+hw3/images/
