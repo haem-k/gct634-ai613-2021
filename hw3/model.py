@@ -11,7 +11,7 @@ class LogMelSpectrogram(nn.Module):
         self.melspectrogram = transforms.MelSpectrogram(
             sample_rate=SAMPLE_RATE,
             n_fft=N_FFT,
-            win_length=WIN_LENGTH,
+            # win_length=WIN_LENGTH,
             hop_length=HOP_SIZE,
             f_min=F_MIN,
             f_max=F_MAX,
@@ -73,7 +73,7 @@ class Transcriber(nn.Module):
         self.melspectrogram = LogMelSpectrogram()
 
         self.frame_conv_stack = ConvStack(N_MELS, cnn_unit, fc_unit)
-        self.frame_fc = nn.Linear(fc_unit, 88)      # fc_unit 256
+        self.frame_fc = nn.Linear(fc_unit, 88)      
 
         self.onset_conv_stack = ConvStack(N_MELS, cnn_unit, fc_unit)
         self.onset_fc = nn.Linear(fc_unit, 88)
@@ -102,9 +102,9 @@ class Transcriber_RNN(nn.Module):
 
     def forward(self, audio):
         # TODO: Question 1
-        mel = self.melspectrogram(audio)    # [16, 200, 229]
+        mel = self.melspectrogram(audio)    
         
-        frame, _ = self.frame_lstm(mel)             # [16, 200, 88*2]    
+        frame, _ = self.frame_lstm(mel)             
         frame_out = self.frame_fc(frame)
 
         onset, _ = self.onset_lstm(mel)
@@ -128,13 +128,13 @@ class Transcriber_CRNN(nn.Module):
 
     def forward(self, audio):
         # TODO: Question 2
-        mel = self.melspectrogram(audio)    # [16, 200, 229]
+        mel = self.melspectrogram(audio)  
         
-        frame_out = self.frame_conv_stack(mel)      # [16, 200, 256]
-        frame_out, _ = self.frame_lstm(frame_out)    # [16, 200, 88*2]    
-        frame_out = self.frame_fc(frame_out)    # [16, 200, 88]
+        frame_out = self.frame_conv_stack(mel)      
+        frame_out, _ = self.frame_lstm(frame_out)   
+        frame_out = self.frame_fc(frame_out)   
 
-        onset_out = self.onset_conv_stack(mel)  # (B, T, C)
+        onset_out = self.onset_conv_stack(mel) 
         onset_out, _ = self.onset_lstm(onset_out)
         onset_out = self.onset_fc(onset_out)
 
@@ -159,17 +159,17 @@ class Transcriber_ONF(nn.Module):
 
     def forward(self, audio):
         # TODO: Question 3
-        mel = self.melspectrogram(audio)    # [16, 200, 229]
+        mel = self.melspectrogram(audio) 
         
-        onset_out = self.onset_conv_stack(mel)  # (B, T, C)
+        frame = self.frame_conv_stack(mel)
+        frame = self.frame_fc(frame)
+
+        onset_out = self.onset_conv_stack(mel) 
         onset_out, _ = self.onset_lstm(onset_out)
         onset_out = self.onset_fc(onset_out)
 
-        frame = self.frame_conv_stack(mel)      # [16, 200, 256]
-        frame = self.frame_fc(frame)
-
         combined = torch.cat((frame, onset_out.detach()), dim=-1)
-        frame_out, _ = self.combined_lstm(combined)               # [16, 200, 88*2]    
+        frame_out, _ = self.combined_lstm(combined)     
         frame_out = self.combined_fc(frame_out)
 
         return frame_out, onset_out
