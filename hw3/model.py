@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torchaudio.transforms as transforms
 
-from constants import F_MAX, F_MIN, HOP_SIZE, N_FFT, N_MELS, SAMPLE_RATE
+from constants import F_MAX, F_MIN, HOP_SIZE, N_FFT, N_MELS, SAMPLE_RATE, WIN_LENGTH
 
 
 class LogMelSpectrogram(nn.Module):
@@ -11,6 +11,7 @@ class LogMelSpectrogram(nn.Module):
         self.melspectrogram = transforms.MelSpectrogram(
             sample_rate=SAMPLE_RATE,
             n_fft=N_FFT,
+            win_length=WIN_LENGTH,
             hop_length=HOP_SIZE,
             f_min=F_MIN,
             f_max=F_MAX,
