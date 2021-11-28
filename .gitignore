@@ -36,3 +36,7 @@ hw3/__pycache__/
 hw3/notebooks/.ipynb_checkpoints/
 
 hw3/images/
+
+hw4/sample_data/
+
+hw4/.DS_Store
