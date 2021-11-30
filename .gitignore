@@ -52,3 +52,12 @@ onsets-and-frames/.ipynb_checkpoints/
 onsets-and-frames/__pycache__/
 
 onsets-and-frames/onsets_and_frames/__pycache__
+hw4/REMI-finetune/
+
+hw4/REMI-tempo-checkpoint/
+
+hw4/__pycache__/
+
+hw4/result/
+
+hw4/events.pkl
