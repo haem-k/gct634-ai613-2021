@@ -244,7 +244,6 @@ class CustomDataset(Dataset):
                 a matrix that contains MIDI velocity values at the frame locations
         """
         audio, sr = soundfile.read(audio_path, dtype='int16')
-        print(sr)
         assert sr == SAMPLE_RATE
 
         audio = torch.ShortTensor(audio)
