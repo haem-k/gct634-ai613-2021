@@ -40,3 +40,15 @@ hw3/images/
 hw4/sample_data/
 
 hw4/.DS_Store
+
+hw4/data/
+
+onsets-and-frames/data/
+
+onsets-and-frames/runs/
+
+onsets-and-frames/.ipynb_checkpoints/
+
+onsets-and-frames/__pycache__/
+
+onsets-and-frames/onsets_and_frames/__pycache__
