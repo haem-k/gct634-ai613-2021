@@ -90,6 +90,10 @@ def evaluate(data, model, onset_threshold=0.5, frame_threshold=0.5, save_path=No
     return metrics
 
 
+def evaluate_custom():
+    print('Evaluate custom datset')
+
+
 def evaluate_file(model_file, dataset, dataset_group, sequence_length, save_path,
                   onset_threshold, frame_threshold, device):
     dataset_class = getattr(dataset_module, dataset)
@@ -101,12 +105,16 @@ def evaluate_file(model_file, dataset, dataset_group, sequence_length, save_path
     model = torch.load(model_file, map_location=device).eval()
     summary(model)
 
-    metrics = evaluate(tqdm(dataset), model, onset_threshold, frame_threshold, save_path)
+    if dataset_class is dataset_module.CustomDataset:
+        evaluate_custom()
+    else:
+        metrics = evaluate(tqdm(dataset), model, onset_threshold, frame_threshold, save_path)
 
-    for key, values in metrics.items():
-        if key.startswith('metric/'):
-            _, category, name = key.split('/')
-            print(f'{category:>32} {name:25}: {np.mean(values):.3f} ± {np.std(values):.3f}')
+        for key, values in metrics.items():
+            if key.startswith('metric/'):
+                _, category, name = key.split('/')
+                print(f'{category:>32} {name:25}: {np.mean(values):.3f} ± {np.std(values):.3f}')
+
 
 
 if __name__ == '__main__':
