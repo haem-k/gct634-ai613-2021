@@ -90,8 +90,14 @@ def evaluate(data, model, onset_threshold=0.5, frame_threshold=0.5, save_path=No
     return metrics
 
 
-def evaluate_custom():
-    print('Evaluate custom datset')
+def infer_only(dataset, model, save_path):
+    for data in dataset:
+        print(data)
+    # for i, data in enumerate(dataloader):
+    #     audio_label = data['audio']
+    #     mel = melspectrogram(audio_label.reshape(-1, audio_label.shape[-1])[:, :-1]).transpose(-1, -2)
+    #     print(mel)
+        # onset_pred, offset_pred, _, frame_pred, velocity_pred = self(mel)
 
 
 def evaluate_file(model_file, dataset, dataset_group, sequence_length, save_path,
@@ -106,7 +112,7 @@ def evaluate_file(model_file, dataset, dataset_group, sequence_length, save_path
     summary(model)
 
     if dataset_class is dataset_module.CustomDataset:
-        evaluate_custom()
+        infer_only(tqdm(dataset), model, save_path)
     else:
         metrics = evaluate(tqdm(dataset), model, onset_threshold, frame_threshold, save_path)
 
