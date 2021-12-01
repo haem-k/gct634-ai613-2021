@@ -138,7 +138,16 @@ class PopMusicTransformer(object):
         # if prompt, load it. Or, random start
         if prompt:
             events = self.extract_events(prompt)
-            words = [[self.event2word['{}_{}'.format(e.name, e.value)] for e in events]]
+            # words = [[self.event2word['{}_{}'.format(e.name, e.value)] for e in events]]
+            
+            words = []
+            for e in events:
+                _name = e.name
+                _value = e.value
+                if 'Note Velocity' in _name and int(_value) > 21:
+                    _value = 21
+                words.append([self.event2word['{}_{}'.format(_name, _value)]])
+            
             words[0].append(self.event2word['Bar_None'])
         else:
             words = []
