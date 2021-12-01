@@ -186,7 +186,7 @@ class MAPS(PianoRollAudioDataset):
 
 
 class CustomDataset(Dataset):
-    def __init__(self, path='data/HW4/samplerate_48000', groups=None, sequence_length=None, seed=42, device=DEFAULT_DEVICE):
+    def __init__(self, path='data/HW4/', groups=None, sequence_length=None, seed=42, device=DEFAULT_DEVICE):
         self.path = path
         self.sequence_length = sequence_length
         self.device = device
