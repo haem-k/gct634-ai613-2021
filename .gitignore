@@ -61,3 +61,5 @@ hw4/__pycache__/
 hw4/result/
 
 hw4/events.pkl
+
+hw4/finetune_traindata/
