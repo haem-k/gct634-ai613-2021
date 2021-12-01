@@ -37,6 +37,7 @@ def load_and_process_audio(flac_path, sequence_length, device):
 
 def transcribe(model, audio):
 
+    # audio = audio[:, 0]   # for audio file that has two channels
     mel = melspectrogram(audio.reshape(-1, audio.shape[-1])[:, :-1]).transpose(-1, -2)
     onset_pred, offset_pred, _, frame_pred, velocity_pred = model(mel)
 

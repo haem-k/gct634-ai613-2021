@@ -88,8 +88,7 @@ class MelSpectrogram(torch.nn.Module):
         mel_output: torch.FloatTensor of shape (B, T, n_mels)
         """
         assert(torch.min(y.data) >= -1)
-        assert(torch.max(y.data) <= 1)
-
+        assert(torch.max(y.data) <= 1)      # y.shape for MAESTRO [1, 3710680]
         magnitudes, phases = self.stft(y)
         magnitudes = magnitudes.data
         mel_output = torch.matmul(self.mel_basis, magnitudes)
