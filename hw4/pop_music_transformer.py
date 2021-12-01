@@ -34,8 +34,8 @@ def Generation():
     model.close()
     
 
-Generation()
-quit()
+# Generation()
+# quit()
 
 def Finetune():
     # declare model
@@ -56,7 +56,7 @@ def Finetune():
     model.finetune(
         training_data=training_data,
         output_checkpoint_folder=output_checkpoint_folder,
-        Epoch_n = 40)
+        Epoch_n = 100)
 
     # close
     model.close()
