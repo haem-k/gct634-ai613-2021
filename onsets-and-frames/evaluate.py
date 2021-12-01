@@ -10,6 +10,7 @@ from mir_eval.transcription_velocity import precision_recall_f1_overlap as evalu
 from mir_eval.util import midi_to_hz
 from scipy.stats import hmean
 from tqdm import tqdm
+from onsets_and_frames.mel import melspectrogram
 
 import onsets_and_frames.dataset as dataset_module
 from onsets_and_frames import *
@@ -91,14 +92,17 @@ def evaluate(data, model, onset_threshold=0.5, frame_threshold=0.5, save_path=No
     return metrics
 
 
-def infer_only(dataset, model, save_path):
+def infer_only(dataset, model, onset_threshold, frame_threshold, save_path):
     for data in dataset:
-        print(data)
-    # for i, data in enumerate(dataloader):
-    #     audio_label = data['audio']
-    #     mel = melspectrogram(audio_label.reshape(-1, audio_label.shape[-1])[:, :-1]).transpose(-1, -2)
-    #     print(mel)
-        # onset_pred, offset_pred, _, frame_pred, velocity_pred = self(mel)
+        audio = data['audio']   # [4838399, 2]: with 2 channels
+        audio = audio[:, 0]
+        
+        mel = melspectrogram(audio.reshape(-1, audio.shape[-1])[:, :-1]).transpose(-1, -2)
+        onset_pred, offset_pred, _, frame_pred, velocity_pred = model(mel)  # onset_pred: [1, 6300, 88]
+
+        p_est, i_est, v_est = extract_notes(onset_pred[0], frame_pred[0], velocity_pred[0], onset_threshold, frame_threshold)
+        midi_path = os.path.join(save_path, os.path.basename(data['path']) + '_pred.mid')
+        save_midi(midi_path, p_est, i_est, v_est)
 
 
 def evaluate_file(model_file, dataset, dataset_group, sequence_length, save_path,
@@ -113,7 +117,7 @@ def evaluate_file(model_file, dataset, dataset_group, sequence_length, save_path
     summary(model)
 
     if dataset_class is dataset_module.CustomDataset:
-        infer_only(tqdm(dataset), model, save_path)
+        infer_only(tqdm(dataset), model, onset_threshold, frame_threshold, save_path)
     else:
         metrics = evaluate(tqdm(dataset), model, onset_threshold, frame_threshold, save_path)
 
