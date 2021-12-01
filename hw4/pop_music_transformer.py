@@ -25,8 +25,8 @@ def Generation():
         n_target_bar=16,
         temperature=1.2,
         topk=5,
-        output_path='./result/test_continuation.midi',
-        prompt='./sample_data/sample_data.midi' 
+        output_path='./result/pianist8/Yiruma_River_Flows_in_You_continue.midi',
+        prompt='./data/pianist8/midi/Yiruma/Yiruma_River_Flows_in_You.mid' 
 
     )
     
@@ -34,8 +34,8 @@ def Generation():
     model.close()
     
 
-# Generation()
-# quit()
+Generation()
+quit()
 
 def Finetune():
     # declare model
@@ -43,11 +43,12 @@ def Finetune():
         checkpoint='REMI-tempo-checkpoint',
         is_training=True)
     # prepared data
-    midi_paths = glob('./data/maestro/*.mid') # you need to revise it
+    # midi_paths = glob('./data/maestro/*.mid') # you need to revise it
+    midi_paths = glob('./finetune_traindata/*.mid')
     # print(midi_paths[3])
     training_data = model.prepare_data(midi_paths=midi_paths)
 
-    output_checkpoint_folder = 'REMI-finetune' # your decision
+    output_checkpoint_folder = 'REMI-finetune_pianist8' # your decision
     if not os.path.exists(output_checkpoint_folder):
         os.mkdir(output_checkpoint_folder)
     
@@ -55,13 +56,13 @@ def Finetune():
     model.finetune(
         training_data=training_data,
         output_checkpoint_folder=output_checkpoint_folder,
-        Epoch_n = 30)
+        Epoch_n = 40)
 
     # close
     model.close()
 
-# Finetune()
-# quit()
+Finetune()
+quit()
 
 
 
