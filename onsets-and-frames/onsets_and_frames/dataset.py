@@ -48,13 +48,15 @@ class PianoRollAudioDataset(Dataset):
             result['label'] = data['label'].to(self.device)
             result['velocity'] = data['velocity'].to(self.device).float()
 
-        result['audio'] = result['audio'].float().div_(32768.0)
+        result['audio'] = result['audio'].float().div_(32768.0) # normalize audio values
         result['onset'] = (result['label'] == 3).float()
         result['offset'] = (result['label'] == 1).float()
         result['frame'] = (result['label'] > 1).float()
         result['velocity'] = result['velocity'].float().div_(128.0)
 
         return result
+
+
 
     def __len__(self):
         return len(self.data)
