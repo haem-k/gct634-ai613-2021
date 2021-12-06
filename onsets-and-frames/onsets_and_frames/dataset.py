@@ -282,7 +282,7 @@ class MAESTRO_scaled(Dataset):
         self.peak_setting['wait'] = 5
 
         # Set threshold for time-scale
-        self.num_onset_threshold = 40
+        self.num_onset_threshold = 5
 
         # Set time-scale scale
         self.scale = 1.3
@@ -320,7 +320,7 @@ class MAESTRO_scaled(Dataset):
             last_frame = first_frame + self.segment_length
 
             # Segment audio file
-            segment = result['audio'][first_frame:last_frame].numpy().astype(np.float64)
+            segment = result['audio'][first_frame:last_frame].numpy().astype(np.float32)
 
             # Detect onset 
             onset_env = librosa.onset.onset_strength(segment, sr=SAMPLE_RATE)
@@ -336,12 +336,12 @@ class MAESTRO_scaled(Dataset):
             if num_onsets >= self.num_onset_threshold:
                 segment_scaled = tsm.wsola(segment, self.scale)
                 scaled_audio.extend(segment_scaled)
-                result['scaled_index'].extend(first_frame)
+                result['scaled_index'].append(first_frame)
             else:
                 scaled_audio.extend(segment)
 
         # Convert type
-        scaled_audio = torch.from_numpy(np.array(scaled_audio))
+        scaled_audio = torch.from_numpy(np.array(scaled_audio).astype(np.float32))
 
         result['audio_scaled'] = scaled_audio.div_(32768.0).to(self.device)   # normalize signal values
         result['audio'] = result['audio'].float().div_(32768.0).to(self.device)                 

@@ -117,6 +117,44 @@ class OnsetsAndFrames(nn.Module):
         }
 
         return predictions, losses
+    
+    def run_on_scaled_batch(self, batch):
+        audio_label = batch['audio']
+        audio_scaled_label = batch['audio_scaled']
+        onset_label = batch['onset']
+        offset_label = batch['offset']
+        frame_label = batch['frame']
+        velocity_label = batch['velocity']
+
+        mel = melspectrogram(audio_scaled_label.reshape(-1, audio_scaled_label.shape[-1])[:, :-1]).transpose(-1, -2)        
+        onset_pred, offset_pred, _, frame_pred, velocity_pred = self(mel)
+        if mel.shape[1] > 200:
+            print(f'mel: {mel.shape}')
+            print(f'onset_pred: {onset_pred.shape}')
+            print(f'offset_pred: {offset_pred.shape}')
+            print(f'frame_pred: {frame_pred.shape}')
+            print(f'velocity_pred: {velocity_pred.shape}')
+
+        predictions = {}
+        losses = {}
+
+
+
+        # predictions = {
+        #     'onset': onset_pred.reshape(*onset_label.shape),
+        #     'offset': offset_pred.reshape(*offset_label.shape),
+        #     'frame': frame_pred.reshape(*frame_label.shape),
+        #     'velocity': velocity_pred.reshape(*velocity_label.shape)
+        # }
+
+        # losses = {
+        #     'loss/onset': F.binary_cross_entropy(predictions['onset'], onset_label),
+        #     'loss/offset': F.binary_cross_entropy(predictions['offset'], offset_label),
+        #     'loss/frame': F.binary_cross_entropy(predictions['frame'], frame_label),
+        #     'loss/velocity': self.velocity_loss(predictions['velocity'], velocity_label, onset_label)
+        # }
+
+        return predictions, losses
 
     def velocity_loss(self, velocity_pred, velocity_label, onset_label):
         denominator = onset_label.sum()
