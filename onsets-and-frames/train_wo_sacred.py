@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 from evaluate import evaluate
 from onsets_and_frames import *
+from onsets_and_frames.dataset import MAESTRO_scaled
 
 
 
@@ -31,6 +32,9 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
     if train_on == 'MAESTRO_small':
         dataset = MAESTRO(path='data/MAESTRO_small', groups=train_groups, sequence_length=sequence_length)
         validation_dataset = MAESTRO(path='data/MAESTRO_small', groups=validation_groups, sequence_length=sequence_length)
+    elif train_on == 'MAESTRO_scaled':
+        dataset = MAESTRO_scaled(groups=train_groups)
+        validation_dataset = MAESTRO_scaled(groups=validation_groups)
     elif train_on == 'MAESTRO':
         dataset = MAESTRO(groups=train_groups, sequence_length=sequence_length)
         validation_dataset = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
@@ -91,7 +95,7 @@ if __name__ == '__main__':
     iterations = 100000
     resume_iteration = None
     checkpoint_interval = 10000
-    train_on = 'MAESTRO'
+    train_on = 'MAESTRO_scaled'
 
     batch_size = 8
     sequence_length = 102400
