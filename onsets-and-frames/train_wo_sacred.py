@@ -3,6 +3,7 @@ from datetime import datetime
 
 import numpy as np
 from torch.nn.utils import clip_grad_norm_
+from torch.nn.utils.rnn import pad_sequence
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -94,18 +95,44 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
 # Custom collate_fn to add zero padding to different size of data in a batch
 def collate_scaled_audio(batch):
     # batch: 8 dictionary items
-    
+    # stacked_batch: 1 dictionary with stacked data
+    batch_size = len(batch)
+
+    stacked_batch = {}
+    stacked_batch['audio_scaled'] = []
+    stacked_batch['audio'] = []
+    stacked_batch['onset'] = []
+    stacked_batch['offset'] = []
+    stacked_batch['frame'] = []
+    stacked_batch['velocity'] = []
+
     # Get a data with maximum length of scaled audio
-    max_data_length = 0
-    for data in batch:
-        length = len(data['audio_scaled'])
-        max_data_length = max(max_data_length, length)
+    # max_data_length = 0
+    data_batch = []
+    for i in range(len(batch)):
+        data = batch[i]
+        data_batch.append(data['audio_scaled'])
+        stacked_batch['audio'].append(data['audio'])
+        stacked_batch['onset'].append(data['onset'])
+        stacked_batch['offset'].append(data['offset'])
+        stacked_batch['frame'].append(data['frame'])
+        stacked_batch['velocity'].append(data['velocity'])
+        # length = len(data['audio_scaled'])
+        # max_data_length = max(max_data_length, length)
     
     # Zero pad all data
+    padded_data_batch = pad_sequence(data_batch, batch_first=True)
+
+    # Stack data into one dict
+    stacked_batch['audio_scaled'] = padded_data_batch
+    stacked_batch['audio'] = torch.stack(stacked_batch['audio'])
+    stacked_batch['onset'] = torch.stack(stacked_batch['onset'])
+    stacked_batch['offset'] = torch.stack(stacked_batch['offset'])
+    stacked_batch['frame'] = torch.stack(stacked_batch['frame'])
+    stacked_batch['velocity'] = torch.stack(stacked_batch['velocity'])
 
     # Return padded data
-
-
+    return stacked_batch
 
 
 if __name__ == '__main__':
