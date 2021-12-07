@@ -128,16 +128,11 @@ class OnsetsAndFrames(nn.Module):
 
         mel = melspectrogram(audio_scaled_label.reshape(-1, audio_scaled_label.shape[-1])[:, :-1]).transpose(-1, -2)        
         onset_pred, offset_pred, _, frame_pred, velocity_pred = self(mel)
-        if mel.shape[1] > 200:
-            print(f'mel: {mel.shape}')
-            print(f'onset_pred: {onset_pred.shape}')
-            print(f'offset_pred: {offset_pred.shape}')
-            print(f'frame_pred: {frame_pred.shape}')
-            print(f'velocity_pred: {velocity_pred.shape}')
 
         predictions = {}
         losses = {}
 
+        # TODO: Revert standardization 
 
 
         # predictions = {
