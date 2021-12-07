@@ -94,11 +94,20 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
 # Custom collate_fn to add zero padding to different size of data in a batch
 def collate_scaled_audio(batch):
     # batch: 8 dictionary items
-
+    
     # Get a data with maximum length of scaled audio
+    max_data_length = 0
+    for data in batch:
+        length = len(data['audio_scaled'])
+        max_data_length = max(max_data_length, length)
+    
     # Zero pad all data
 
     # Return padded data
+
+
+
+
 if __name__ == '__main__':
     
     # logdir = 'runs/transcriber-' + datetime.now().strftime('%y%m%d-%H%M%S')
