@@ -42,7 +42,10 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
         dataset = MAPS(groups=['AkPnBcht', 'AkPnBsdf', 'AkPnCGdD', 'AkPnStgb', 'SptkBGAm', 'SptkBGCl', 'StbgTGd2'], sequence_length=sequence_length)
         validation_dataset = MAPS(groups=['ENSTDkAm', 'ENSTDkCl'], sequence_length=validation_length)
 
-    loader = DataLoader(dataset, batch_size, shuffle=True, drop_last=True)
+    if train_on == 'MAESTRO_scaled':
+        loader = DataLoader(dataset, batch_size, shuffle=True, collate_fn=collate_scaled_audio, drop_last=True)
+    else:
+        loader = DataLoader(dataset, batch_size, shuffle=True, drop_last=True)
 
     if resume_iteration is None:
         model = OnsetsAndFrames(N_MELS, MAX_MIDI - MIN_MIDI + 1, model_complexity).to(device)
@@ -88,7 +91,14 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
         #     torch.save(optimizer.state_dict(), os.path.join(logdir, 'last-optimizer-state.pt'))
 
 
+# Custom collate_fn to add zero padding to different size of data in a batch
+def collate_scaled_audio(batch):
+    # batch: 8 dictionary items
 
+    # Get a data with maximum length of scaled audio
+    # Zero pad all data
+
+    # Return padded data
 if __name__ == '__main__':
     
     # logdir = 'runs/transcriber-' + datetime.now().strftime('%y%m%d-%H%M%S')
