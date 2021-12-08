@@ -96,10 +96,10 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
 def collate_scaled_audio(batch):
     # batch: 8 dictionary items
     # stacked_batch: 1 dictionary with stacked data
-    batch_size = len(batch)
 
     stacked_batch = {}
     stacked_batch['audio_scaled'] = []
+    stacked_batch['scaled_index'] = []
     stacked_batch['audio'] = []
     stacked_batch['onset'] = []
     stacked_batch['offset'] = []
@@ -112,25 +112,25 @@ def collate_scaled_audio(batch):
     for i in range(len(batch)):
         data = batch[i]
         data_batch.append(data['audio_scaled'])
+        stacked_batch['scaled_index'].append(data['scaled_index'])
         stacked_batch['audio'].append(data['audio'])
         stacked_batch['onset'].append(data['onset'])
         stacked_batch['offset'].append(data['offset'])
         stacked_batch['frame'].append(data['frame'])
         stacked_batch['velocity'].append(data['velocity'])
-        # length = len(data['audio_scaled'])
-        # max_data_length = max(max_data_length, length)
     
     # Zero pad all data
     padded_data_batch = pad_sequence(data_batch, batch_first=True)
 
     # Stack data into one dict
     stacked_batch['audio_scaled'] = padded_data_batch
+    stacked_batch['scaled_index'] = torch.stack(stacked_batch['scaled_index'])
     stacked_batch['audio'] = torch.stack(stacked_batch['audio'])
     stacked_batch['onset'] = torch.stack(stacked_batch['onset'])
     stacked_batch['offset'] = torch.stack(stacked_batch['offset'])
     stacked_batch['frame'] = torch.stack(stacked_batch['frame'])
     stacked_batch['velocity'] = torch.stack(stacked_batch['velocity'])
-
+    
     # Return padded data
     return stacked_batch
 
