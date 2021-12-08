@@ -285,7 +285,7 @@ class MAESTRO_scaled(Dataset):
         self.num_onset_threshold = 5
 
         # Set time-scale scale
-        self.scale = 1.3
+        self.scale = SCALE
 
         self.data = []
         print(f"Loading {len(groups)} group{'s' if len(groups) > 1 else ''} "
