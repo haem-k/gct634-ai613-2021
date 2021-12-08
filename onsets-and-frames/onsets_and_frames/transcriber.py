@@ -10,6 +10,7 @@ from torch import nn
 
 from .lstm import BiLSTM
 from .mel import melspectrogram
+from .constants import HOP_LENGTH, SCALE
 
 
 class ConvStack(nn.Module):
@@ -119,35 +120,94 @@ class OnsetsAndFrames(nn.Module):
         return predictions, losses
     
     def run_on_scaled_batch(self, batch):
+        scaled_index_batch = batch['scaled_index']
         audio_label = batch['audio']
         audio_scaled_label = batch['audio_scaled']
-        onset_label = batch['onset']
+        onset_label = batch['onset']                        # (batch_size, 200, 88)
         offset_label = batch['offset']
         frame_label = batch['frame']
         velocity_label = batch['velocity']
 
+        batch_size = onset_label.shape[0]
+
         mel = melspectrogram(audio_scaled_label.reshape(-1, audio_scaled_label.shape[-1])[:, :-1]).transpose(-1, -2)        
         onset_pred, offset_pred, _, frame_pred, velocity_pred = self(mel)
 
-        predictions = {}
-        losses = {}
 
-        # TODO: Revert standardization 
+        # TODO: Reverse standardization 
+        reverted_onset_pred = torch.zeros_like(onset_label)
+        reverted_offset_pred = torch.zeros_like(offset_label)
+        reverted_frame_pred = torch.zeros_like(frame_label)
+        reverted_velocity_pred = torch.zeros_like(velocity_label)
 
+        num_segments = len(scaled_index_batch[0])
+        num_frames_segment = audio_label.shape[1] // num_segments // HOP_LENGTH
+        num_frames_scaled_segment = int(num_frames_segment * SCALE)
+        num_frames_processed = audio_scaled_label.shape[1] // num_segments // HOP_LENGTH
 
-        # predictions = {
-        #     'onset': onset_pred.reshape(*onset_label.shape),
-        #     'offset': offset_pred.reshape(*offset_label.shape),
-        #     'frame': frame_pred.reshape(*frame_label.shape),
-        #     'velocity': velocity_pred.reshape(*velocity_label.shape)
-        # }
+        padded_frames = (SCALE - 1.0) * num_frames_segment
+        for i in range(batch_size):
+            scaled_index = scaled_index_batch[i]
+            num_not_scaled = len(scaled_index[scaled_index < 0])
+            num_delete_frames = int(num_not_scaled * padded_frames)
+            
+            cropped_onset = onset_pred[i]
+            cropped_offset = offset_pred[i]
+            cropped_frame = frame_pred[i]
+            cropped_velocity = velocity_pred[i]
 
-        # losses = {
-        #     'loss/onset': F.binary_cross_entropy(predictions['onset'], onset_label),
-        #     'loss/offset': F.binary_cross_entropy(predictions['offset'], offset_label),
-        #     'loss/frame': F.binary_cross_entropy(predictions['frame'], frame_label),
-        #     'loss/velocity': self.velocity_loss(predictions['velocity'], velocity_label, onset_label)
-        # }
+            # Crop frames if data is padded
+            if num_delete_frames != 0:
+                cropped_onset = onset_pred[i][:-num_delete_frames, :]
+                cropped_offset = offset_pred[i][:-num_delete_frames, :]
+                cropped_frame = frame_pred[i][:-num_delete_frames, :]
+                cropped_velocity = velocity_pred[i][:-num_delete_frames, :]
+
+            # For every segment, check if the segment is scaled and reshape to original length
+            for j in range(num_segments):               
+                first_frame = scaled_index[j]
+
+                # Get segment from each data
+                if first_frame == -1:
+                    end_frame = first_frame + num_frames_segment
+                else:
+                    end_frame = first_frame + num_frames_scaled_segment
+
+                onset = cropped_onset[first_frame:end_frame]
+                offset = cropped_offset[first_frame:end_frame]
+                frame = cropped_frame[first_frame:end_frame]
+                velocity = cropped_velocity[first_frame:end_frame]
+                
+                # Reshape segment that is scaled
+                if first_frame != -1:
+                    onset = onset.transpose(0, 1).unsqueeze(0)
+                    onset = F.interpolate(onset, size=num_frames_segment).squeeze().transpose(0, 1)
+                    offset = offset.transpose(0, 1).unsqueeze(0)
+                    offset = F.interpolate(offset, size=num_frames_segment).squeeze().transpose(0, 1)
+                    frame = frame.transpose(0, 1).unsqueeze(0)
+                    frame = F.interpolate(frame, size=num_frames_segment).squeeze().transpose(0, 1)
+                    velocity = velocity.transpose(0, 1).unsqueeze(0)
+                    velocity = F.interpolate(velocity, size=num_frames_segment).squeeze().transpose(0, 1)
+
+                # Reshape prediction results into original length
+                reverted_onset_pred[i][first_frame:first_frame+num_frames_segment] = onset
+                reverted_offset_pred[i][first_frame:first_frame+num_frames_segment] = offset
+                reverted_frame_pred[i][first_frame:first_frame+num_frames_segment] = frame
+                reverted_velocity_pred[i][first_frame:first_frame+num_frames_segment] = velocity
+            
+        predictions = {
+            'onset': reverted_onset_pred.reshape(*onset_label.shape),
+            'offset': reverted_offset_pred.reshape(*offset_label.shape),
+            'frame': reverted_frame_pred.reshape(*frame_label.shape),
+            'velocity': reverted_velocity_pred.reshape(*velocity_label.shape)
+        }
+
+        losses = {
+            'loss/onset': F.binary_cross_entropy(predictions['onset'], onset_label),
+            'loss/offset': F.binary_cross_entropy(predictions['offset'], offset_label),
+            'loss/frame': F.binary_cross_entropy(predictions['frame'], frame_label),
+            'loss/velocity': self.velocity_loss(predictions['velocity'], velocity_label, onset_label)
+        }
 
         return predictions, losses
 
