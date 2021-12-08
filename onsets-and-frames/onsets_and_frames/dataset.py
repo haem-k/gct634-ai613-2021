@@ -310,10 +310,11 @@ class MAESTRO_scaled(Dataset):
         result['audio'] = data['audio'][begin:end]
         result['label'] = data['label'][step_begin:step_end, :].to(self.device)
         result['velocity'] = data['velocity'][step_begin:step_end, :].to(self.device)
-        result['scaled_index'] = []
-
+        
         # Measure note density for every 100 frames
         num_segments = len(result['audio']) // self.segment_length
+        result['scaled_index'] = torch.full((num_segments,), -1)
+        
         scaled_audio = []
         for i in range(num_segments):
             first_frame = i * self.segment_length               # 0~100, 100~200
@@ -336,7 +337,7 @@ class MAESTRO_scaled(Dataset):
             if num_onsets >= self.num_onset_threshold:
                 segment_scaled = tsm.wsola(segment, self.scale)
                 scaled_audio.extend(segment_scaled)
-                result['scaled_index'].append(first_frame)
+                result['scaled_index'][i] = first_frame // HOP_LENGTH
             else:
                 scaled_audio.extend(segment)
 
