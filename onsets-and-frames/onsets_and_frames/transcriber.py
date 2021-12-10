@@ -242,22 +242,6 @@ class OnsetsAndFrames(nn.Module):
         num_frames_segment = SEGMENT_FRAMES
         num_frames_scaled_segment = int(num_frames_segment * SCALE)                 # 130
 
-        padded_frames = (SCALE - 1.0) * num_frames_segment
-        num_not_scaled = len(scaled_index[scaled_index < 0])
-        num_delete_frames = int(num_not_scaled * padded_frames)
-        
-        cropped_onset = onset_pred[0]
-        cropped_offset = offset_pred[0]
-        cropped_frame = frame_pred[0]
-        cropped_velocity = velocity_pred[0]
-
-        # Crop frames if data is padded
-        if num_delete_frames != 0:
-            cropped_onset = onset_pred[0][:-num_delete_frames]
-            cropped_offset = offset_pred[0][:-num_delete_frames, :]
-            cropped_frame = frame_pred[0][:-num_delete_frames, :]
-            cropped_velocity = velocity_pred[0][:-num_delete_frames, :]
-
         # For every segment, check if the segment is scaled and reshape to original length
         for j in range(num_segments):               
             first_frame = scaled_index[j]
@@ -268,10 +252,10 @@ class OnsetsAndFrames(nn.Module):
             else:
                 end_frame = first_frame + num_frames_scaled_segment
 
-            onset = cropped_onset[first_frame:end_frame]
-            offset = cropped_offset[first_frame:end_frame]
-            frame = cropped_frame[first_frame:end_frame]
-            velocity = cropped_velocity[first_frame:end_frame]
+            onset = onset_pred[0][first_frame:end_frame]
+            offset = offset_pred[0][first_frame:end_frame]
+            frame = frame_pred[0][first_frame:end_frame]
+            velocity = velocity_pred[0][first_frame:end_frame]
    
             # Reshape segment that is scaled
             if first_frame != -1:
