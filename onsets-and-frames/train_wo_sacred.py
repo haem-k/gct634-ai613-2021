@@ -68,28 +68,28 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
         else:
             predictions, losses = model.run_on_batch(batch)
 
-        # loss = sum(losses.values())
-        # optimizer.zero_grad()
-        # loss.backward()
-        # optimizer.step()
-        # scheduler.step()
+        loss = sum(losses.values())
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        scheduler.step()
 
-        # if clip_gradient_norm:
-        #     clip_grad_norm_(model.parameters(), clip_gradient_norm)
+        if clip_gradient_norm:
+            clip_grad_norm_(model.parameters(), clip_gradient_norm)
 
-        # for key, value in {'loss': loss, **losses}.items():
-        #     writer.add_scalar(key, value.item(), global_step=i)
+        for key, value in {'loss': loss, **losses}.items():
+            writer.add_scalar(key, value.item(), global_step=i)
 
-        # if i % validation_interval == 0:
-        #     model.eval()
-        #     with torch.no_grad():
-        #         for key, value in evaluate(validation_dataset, model).items():
-        #             writer.add_scalar('validation/' + key.replace(' ', '_'), np.mean(value), global_step=i)
-        #     model.train()
+        if i % validation_interval == 0:
+            model.eval()
+            with torch.no_grad():
+                for key, value in evaluate(validation_dataset, model).items():
+                    writer.add_scalar('validation/' + key.replace(' ', '_'), np.mean(value), global_step=i)
+            model.train()
 
-        # if i % checkpoint_interval == 0:
-        #     torch.save(model, os.path.join(logdir, f'model-{i}.pt'))
-        #     torch.save(optimizer.state_dict(), os.path.join(logdir, 'last-optimizer-state.pt'))
+        if i % checkpoint_interval == 0:
+            torch.save(model, os.path.join(logdir, f'model-{i}.pt'))
+            torch.save(optimizer.state_dict(), os.path.join(logdir, 'last-optimizer-state.pt'))
 
 
 # Custom collate_fn to add zero padding to different size of data in a batch
@@ -141,9 +141,9 @@ if __name__ == '__main__':
     # logdir = 'runs/maestro_pretrain_100000'
     logdir = 'runs/standardize'
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    iterations = 100000
+    iterations = 10000
     resume_iteration = None
-    checkpoint_interval = 10000
+    checkpoint_interval = 1000
     train_on = 'MAESTRO_scaled'
 
     batch_size = 8
