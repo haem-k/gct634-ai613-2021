@@ -18,11 +18,14 @@ from onsets_and_frames import *
 eps = sys.float_info.epsilon
 
 
-def evaluate(data, model, onset_threshold=0.5, frame_threshold=0.5, save_path=None):
+def evaluate(data, model, onset_threshold=0.5, frame_threshold=0.5, save_path=None, dataset='MAESTRO'):
     metrics = defaultdict(list)
 
     for label in data:
-        pred, losses = model.run_on_batch(label)
+        if dataset == 'MAESTRO_scaled':
+            pred, losses = model.evaluate_on_scaled_batch(label)
+        else:
+            pred, losses = model.run_on_batch(label)
 
         for key, loss in losses.items():
             metrics[key].append(loss.item())
@@ -118,13 +121,15 @@ def evaluate_file(model_file, dataset, dataset_group, sequence_length, save_path
 
     if dataset_class is dataset_module.CustomDataset:
         infer_only(tqdm(dataset), model, onset_threshold, frame_threshold, save_path)
+    elif dataset_class is dataset_module.MAESTRO_scaled:
+        metrics = evaluate(tqdm(dataset), model, onset_threshold, frame_threshold, save_path, dataset='MAESTRO_scaled')
     else:
         metrics = evaluate(tqdm(dataset), model, onset_threshold, frame_threshold, save_path)
 
-        for key, values in metrics.items():
-            if key.startswith('metric/'):
-                _, category, name = key.split('/')
-                print(f'{category:>32} {name:25}: {np.mean(values):.3f} ± {np.std(values):.3f}')
+    for key, values in metrics.items():
+        if key.startswith('metric/'):
+            _, category, name = key.split('/')
+            print(f'{category:>32} {name:25}: {np.mean(values):.3f} ± {np.std(values):.3f}')
 
 
 

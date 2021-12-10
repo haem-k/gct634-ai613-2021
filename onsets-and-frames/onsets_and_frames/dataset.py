@@ -264,7 +264,7 @@ class CustomDataset(Dataset):
 
 # Get 200 frame audio and scale if note density is too high
 class MAESTRO_scaled(Dataset):
-    def __init__(self, path='data/MAESTRO', groups=None, sequence_length=HOP_LENGTH*200, seed=42, device=DEFAULT_DEVICE):
+    def __init__(self, path='data/MAESTRO_small', groups=None, sequence_length=HOP_LENGTH*200, seed=42, device=DEFAULT_DEVICE):
         self.path = path
         self.groups = groups if groups is not None else self.available_groups()
         self.sequence_length = sequence_length
