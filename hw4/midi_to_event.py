@@ -10,8 +10,8 @@ import os
 
 # Read example midi file
 # file_name = 'sample_data/sample_data.midi'
-data_path = 'data/maestro'
-file_names = sorted(glob.glob(os.path.join(data_path, '*.midi')))
+data_path = 'data/pianist8/task1'
+file_names = sorted(glob.glob(os.path.join(data_path, '*.mid')))
 
 for midi in file_names:
     midi_obj = miditoolkit.midi.parser.MidiFile(midi)
@@ -51,13 +51,15 @@ for midi in file_names:
     #     print()
 
     events = utils.item2event(groups)
-    print(*events[:30], sep='\n')
+    # print(*events[:30], sep='\n')
 
     # Save events as a file
-    pickle.dump(events, open('events.pkl', 'wb'))
+    remi_path = f'{midi[:-4]}.pkl'
+    pickle.dump(events, open(remi_path, 'wb'))
+    # quit()
 
     # Convert events to MIDI
-    events = pickle.load(open('events.pkl', 'rb'))
+    events = pickle.load(open(remi_path, 'rb'))
     midi_path = midi[:-4] + '_converted.midi'
     utils.write_midi_events(None, None, midi_path, prompt_path=None, events=events)
 
