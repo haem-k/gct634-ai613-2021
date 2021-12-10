@@ -264,7 +264,7 @@ class CustomDataset(Dataset):
 
 # Get 200 frame audio and scale if note density is too high
 class MAESTRO_scaled(Dataset):
-    def __init__(self, path='data/MAESTRO_small', groups=None, sequence_length=HOP_LENGTH*200, seed=42, device=DEFAULT_DEVICE):
+    def __init__(self, path='data/MAESTRO_small', groups=None, sequence_length=None, seed=42, device=DEFAULT_DEVICE):
         self.path = path
         self.groups = groups if groups is not None else self.available_groups()
         self.sequence_length = sequence_length
@@ -298,18 +298,24 @@ class MAESTRO_scaled(Dataset):
         data = self.data[index]
         result = dict(path=data['path'])
 
-        # Get sequence_length of the audio
-        audio_length = len(data['audio'])
-        step_begin = self.random.randint(audio_length - self.sequence_length) // HOP_LENGTH
-        n_steps = self.sequence_length // HOP_LENGTH
-        step_end = step_begin + n_steps
+        # Check if sequence length is None
+        if self.sequence_length is not None:
+            # Get subsequence of audio
+            audio_length = len(data['audio'])
+            step_begin = self.random.randint(audio_length - self.sequence_length) // HOP_LENGTH
+            n_steps = self.sequence_length // HOP_LENGTH
+            step_end = step_begin + n_steps
 
-        begin = step_begin * HOP_LENGTH
-        end = begin + self.sequence_length
+            begin = step_begin * HOP_LENGTH
+            end = begin + self.sequence_length
 
-        result['audio'] = data['audio'][begin:end]
-        result['label'] = data['label'][step_begin:step_end, :].to(self.device)
-        result['velocity'] = data['velocity'][step_begin:step_end, :].to(self.device)
+            result['audio'] = data['audio'][begin:end]
+            result['label'] = data['label'][step_begin:step_end, :].to(self.device)
+            result['velocity'] = data['velocity'][step_begin:step_end, :].to(self.device)
+        else:
+            result['audio'] = data['audio']
+            result['label'] = data['label'].to(self.device)
+            result['velocity'] = data['velocity'].to(self.device).float()
         
         # Measure note density for every 100 frames
         num_segments = len(result['audio']) // self.segment_length
