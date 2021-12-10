@@ -144,7 +144,7 @@ if __name__ == '__main__':
     
     # logdir = 'runs/transcriber-' + datetime.now().strftime('%y%m%d-%H%M%S')
     # logdir = 'runs/maestro_pretrain_100000'
-    logdir = 'runs/standardize'
+    logdir = 'runs/standardize_test'
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     iterations = 10000
     resume_iteration = None
