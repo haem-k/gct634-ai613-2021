@@ -10,7 +10,7 @@ from torch import nn
 
 from .lstm import BiLSTM
 from .mel import melspectrogram
-from .constants import HOP_LENGTH, SCALE
+from .constants import HOP_LENGTH, SCALE, SEGMENT_FRAMES
 
 
 class ConvStack(nn.Module):
@@ -239,8 +239,8 @@ class OnsetsAndFrames(nn.Module):
         reverted_velocity_pred = torch.zeros_like(velocity_label)
 
         num_segments = scaled_index.shape[0]
-        num_frames_segment = audio_label.shape[0] // num_segments // HOP_LENGTH
-        num_frames_scaled_segment = int(num_frames_segment * SCALE)
+        num_frames_segment = SEGMENT_FRAMES
+        num_frames_scaled_segment = int(num_frames_segment * SCALE)                 # 130
 
         padded_frames = (SCALE - 1.0) * num_frames_segment
         num_not_scaled = len(scaled_index[scaled_index < 0])
