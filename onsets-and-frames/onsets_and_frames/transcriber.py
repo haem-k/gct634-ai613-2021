@@ -144,11 +144,13 @@ class OnsetsAndFrames(nn.Module):
         num_frames_scaled_segment = int(num_frames_segment * SCALE) 
         # num_frames_processed = audio_scaled_label.shape[1] // num_segments // HOP_LENGTH
 
-        padded_frames = (SCALE - 1.0) * num_frames_segment
+        # padded_frames = (SCALE - 1.0) * num_frames_segment
+        padded_frames = batch['padded_frames']
         for i in range(batch_size):
             scaled_index = scaled_index_batch[i]
             num_not_scaled = len(scaled_index[scaled_index < 0])
-            num_delete_frames = int(num_not_scaled * padded_frames)
+            # num_delete_frames = int(num_not_scaled * padded_frames)
+            num_delete_frames = int(padded_frames[i])
             
             cropped_onset = onset_pred[i]
             cropped_offset = offset_pred[i]
