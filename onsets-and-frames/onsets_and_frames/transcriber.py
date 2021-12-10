@@ -121,7 +121,7 @@ class OnsetsAndFrames(nn.Module):
     
     def run_on_scaled_batch(self, batch):
         scaled_index_batch = batch['scaled_index']
-        audio_label = batch['audio']
+        # audio_label = batch['audio']
         audio_scaled_label = batch['audio_scaled']
         onset_label = batch['onset']                        # (batch_size, 200, 88)
         offset_label = batch['offset']
@@ -140,9 +140,9 @@ class OnsetsAndFrames(nn.Module):
         reverted_velocity_pred = torch.zeros_like(velocity_label)
 
         num_segments = len(scaled_index_batch[0])
-        num_frames_segment = audio_label.shape[1] // num_segments // HOP_LENGTH
-        num_frames_scaled_segment = int(num_frames_segment * SCALE)
-        num_frames_processed = audio_scaled_label.shape[1] // num_segments // HOP_LENGTH
+        num_frames_segment = SEGMENT_FRAMES
+        num_frames_scaled_segment = int(num_frames_segment * SCALE) 
+        # num_frames_processed = audio_scaled_label.shape[1] // num_segments // HOP_LENGTH
 
         padded_frames = (SCALE - 1.0) * num_frames_segment
         for i in range(batch_size):
@@ -163,11 +163,9 @@ class OnsetsAndFrames(nn.Module):
                 cropped_velocity = velocity_pred[i][:-num_delete_frames, :]
 
             # For every segment, check if the segment is scaled and reshape to original length
+            first_frame = 0
             for j in range(num_segments):               
-                first_frame = scaled_index[j]
-
-                # Get segment from each data
-                if first_frame == -1:
+                if scaled_index[j] == -1:
                     end_frame = first_frame + num_frames_segment
                 else:
                     end_frame = first_frame + num_frames_scaled_segment
@@ -178,7 +176,7 @@ class OnsetsAndFrames(nn.Module):
                 velocity = cropped_velocity[first_frame:end_frame]
                 
                 # Reshape segment that is scaled
-                if first_frame != -1:
+                if scaled_index[j] != -1:
                     onset = onset.transpose(0, 1).unsqueeze(0)
                     onset = F.interpolate(onset, size=num_frames_segment).squeeze().transpose(0, 1)
                     offset = offset.transpose(0, 1).unsqueeze(0)
@@ -189,10 +187,14 @@ class OnsetsAndFrames(nn.Module):
                     velocity = F.interpolate(velocity, size=num_frames_segment).squeeze().transpose(0, 1)
 
                 # Reshape prediction results into original length
-                reverted_onset_pred[i][first_frame:first_frame+num_frames_segment] = onset
-                reverted_offset_pred[i][first_frame:first_frame+num_frames_segment] = offset
-                reverted_frame_pred[i][first_frame:first_frame+num_frames_segment] = frame
-                reverted_velocity_pred[i][first_frame:first_frame+num_frames_segment] = velocity
+                reverted_first_frame = j * num_frames_segment
+                reverted_onset_pred[i][reverted_first_frame:reverted_first_frame+num_frames_segment] = onset
+                reverted_offset_pred[i][reverted_first_frame:reverted_first_frame+num_frames_segment] = offset
+                reverted_frame_pred[i][reverted_first_frame:reverted_first_frame+num_frames_segment] = frame
+                reverted_velocity_pred[i][reverted_first_frame:reverted_first_frame+num_frames_segment] = velocity
+
+                # Update first_frame
+                first_frame = end_frame
             
         predictions = {
             'onset': reverted_onset_pred.reshape(*onset_label.shape),

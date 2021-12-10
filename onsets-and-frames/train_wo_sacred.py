@@ -34,7 +34,7 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
         dataset = MAESTRO(path='data/MAESTRO_small', groups=train_groups, sequence_length=sequence_length)
         validation_dataset = MAESTRO(path='data/MAESTRO_small', groups=validation_groups, sequence_length=sequence_length)
     elif train_on == 'MAESTRO_scaled':
-        dataset = MAESTRO_scaled(groups=train_groups)
+        dataset = MAESTRO_scaled(groups=train_groups, sequence_length=sequence_length)
         validation_dataset = MAESTRO_scaled(groups=validation_groups)
     elif train_on == 'MAESTRO':
         dataset = MAESTRO(groups=train_groups, sequence_length=sequence_length)
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     train_on = 'MAESTRO_scaled'
 
     batch_size = 8
-    sequence_length = 102400
+    sequence_length = 200 * HOP_LENGTH
     model_complexity = 48
 
     learning_rate = 0.0006
