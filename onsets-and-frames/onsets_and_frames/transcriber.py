@@ -223,15 +223,6 @@ class OnsetsAndFrames(nn.Module):
         mel = melspectrogram(audio_scaled_label.reshape(-1, audio_scaled_label.shape[-1])[:, :-1]).transpose(-1, -2)        
         onset_pred, offset_pred, _, frame_pred, velocity_pred = self(mel)
 
-        # print(f'scaled_index.shape: {scaled_index.shape}')
-        # print(f'audio_label.shape: {audio_label.shape}')
-        # print(f'audio_scaled_label.shape: {audio_scaled_label.shape}')
-        # print(f'onset_label.shape: {onset_label.shape}')
-        # print(f'offset_label.shape: {offset_label.shape}')
-        # print(f'frame_label.shape: {frame_label.shape}')
-        # print(f'velocity_label.shape: {velocity_label.shape}')
-        # print()
-
         # TODO: Reverse standardization 
         reverted_onset_pred = torch.zeros_like(onset_label)
         reverted_offset_pred = torch.zeros_like(offset_label)
