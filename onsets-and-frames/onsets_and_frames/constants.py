@@ -17,5 +17,6 @@ MEL_FMAX = SAMPLE_RATE // 2
 WINDOW_LENGTH = 2048
 
 SCALE = 1.3
+SEGMENT_FRAMES = 100
 
 DEFAULT_DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'

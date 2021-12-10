@@ -270,7 +270,7 @@ class MAESTRO_scaled(Dataset):
         self.sequence_length = sequence_length
         self.device = device
         self.random = np.random.RandomState(seed)
-        self.segment_length = 100 * HOP_LENGTH      # 100 frames per segment
+        self.segment_length = SEGMENT_FRAMES * HOP_LENGTH      # 100 frames per segment
 
         # Settings for peak picking
         self.peak_setting = {}
