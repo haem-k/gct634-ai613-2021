@@ -109,6 +109,7 @@ def collate_scaled_audio(batch):
     # Get a data with maximum length of scaled audio
     # max_data_length = 0
     data_batch = []
+    num_scaled_frames = torch.zeros((len(batch),))
     for i in range(len(batch)):
         data = batch[i]
         data_batch.append(data['audio_scaled'])
@@ -118,11 +119,15 @@ def collate_scaled_audio(batch):
         stacked_batch['offset'].append(data['offset'])
         stacked_batch['frame'].append(data['frame'])
         stacked_batch['velocity'].append(data['velocity'])
+
+        num_scaled_frames[i] = data['audio_scaled'].shape[0] // HOP_LENGTH
     
     # Zero pad all data
     padded_data_batch = pad_sequence(data_batch, batch_first=True)
+    padded_length = padded_data_batch.shape[-1] // HOP_LENGTH
 
     # Stack data into one dict
+    stacked_batch['padded_frames'] = torch.full_like(num_scaled_frames, padded_length) - num_scaled_frames
     stacked_batch['audio_scaled'] = padded_data_batch
     stacked_batch['scaled_index'] = torch.stack(stacked_batch['scaled_index'])
     stacked_batch['audio'] = torch.stack(stacked_batch['audio'])
