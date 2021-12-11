@@ -100,6 +100,7 @@ def collate_scaled_audio(batch):
     stacked_batch = {}
     stacked_batch['audio_scaled'] = []
     stacked_batch['scaled_index'] = []
+    stacked_batch['num_onsets'] = []
     stacked_batch['audio'] = []
     stacked_batch['onset'] = []
     stacked_batch['offset'] = []
@@ -114,6 +115,7 @@ def collate_scaled_audio(batch):
         data = batch[i]
         data_batch.append(data['audio_scaled'])
         stacked_batch['scaled_index'].append(data['scaled_index'])
+        stacked_batch['num_onsets'].append(data['num_onsets'])
         stacked_batch['audio'].append(data['audio'])
         stacked_batch['onset'].append(data['onset'])
         stacked_batch['offset'].append(data['offset'])
@@ -130,6 +132,7 @@ def collate_scaled_audio(batch):
     stacked_batch['padded_frames'] = torch.full_like(num_scaled_frames, padded_length) - num_scaled_frames
     stacked_batch['audio_scaled'] = padded_data_batch
     stacked_batch['scaled_index'] = torch.stack(stacked_batch['scaled_index'])
+    stacked_batch['num_onsets'] = torch.stack(stacked_batch['num_onsets'])
     stacked_batch['audio'] = torch.stack(stacked_batch['audio'])
     stacked_batch['onset'] = torch.stack(stacked_batch['onset'])
     stacked_batch['offset'] = torch.stack(stacked_batch['offset'])

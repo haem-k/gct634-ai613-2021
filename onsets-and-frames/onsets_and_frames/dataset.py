@@ -320,6 +320,9 @@ class MAESTRO_scaled(Dataset):
         # Measure note density for every 100 frames
         num_segments = len(result['audio']) // self.segment_length
         result['scaled_index'] = torch.full((num_segments,), -1)
+
+        # Keep number of onsets for every num_segments
+        result['num_onsets'] = torch.zeros((num_segments,))
         
         scaled_audio = []
         for i in range(num_segments):
@@ -346,6 +349,8 @@ class MAESTRO_scaled(Dataset):
                 result['scaled_index'][i] = first_frame // HOP_LENGTH
             else:
                 scaled_audio.extend(segment)
+
+            result['num_onsets'][i] = num_onsets
 
         # Convert type
         scaled_audio = torch.from_numpy(np.array(scaled_audio).astype(np.float32))
