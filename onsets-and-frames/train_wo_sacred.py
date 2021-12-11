@@ -35,7 +35,7 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
         validation_dataset = MAESTRO(path='data/MAESTRO_small', groups=validation_groups, sequence_length=sequence_length)
     elif train_on == 'MAESTRO_scaled':
         dataset = MAESTRO_scaled(groups=train_groups, sequence_length=sequence_length)
-        validation_dataset = MAESTRO_scaled(groups=validation_groups)
+        validation_dataset = MAESTRO_scaled(groups=validation_groups, sequence_length=sequence_length)
     elif train_on == 'MAESTRO':
         dataset = MAESTRO(groups=train_groups, sequence_length=sequence_length)
         validation_dataset = MAESTRO(groups=validation_groups, sequence_length=sequence_length)
@@ -83,7 +83,7 @@ def train(logdir, device, iterations, resume_iteration, checkpoint_interval, tra
         if i % validation_interval == 0:
             model.eval()
             with torch.no_grad():
-                for key, value in evaluate(validation_dataset, model).items():
+                for key, value in evaluate(validation_dataset, model, dataset=train_on).items():
                     writer.add_scalar('validation/' + key.replace(' ', '_'), np.mean(value), global_step=i)
             model.train()
 
